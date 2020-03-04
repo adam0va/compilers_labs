@@ -4,14 +4,12 @@
 #include <string>
 
 void addConcatSymbol(std::string &s) {
-	// *, (, ), |
-
 	for (int i = 0; i < s.length(); i++) {
 		if (s[i] == '(' || s[i] == '|')
 			continue;
 
 		if (i < s.length() - 1) {
-			if (s[i + 1] == '*' || s[i + 1] == '*' || s[i + 1] == '|' || s[i + 1] == ')') 
+			if (s[i + 1] == '*' || s[i + 1] == '+' || s[i + 1] == '*' || s[i + 1] == '|' || s[i + 1] == ')') 
 				continue; 
 			else {
 				s.insert(i + 1, ".");
@@ -47,7 +45,7 @@ std::string makePostfixForm(std::string &s) {
 		else if (isOperator(s[i])) {
 			while (	not(operatorStack.empty()) && 
 					isOperator(operatorStack.top()) && 
-					(getPrecedence(operatorStack.top() >= getPrecedence(s[i])))) {
+					(getPrecedence(operatorStack.top()) >= getPrecedence(s[i]))) {
 				outputQueue.push_back(operatorStack.top());
 				operatorStack.pop();
 			}
@@ -68,6 +66,10 @@ std::string makePostfixForm(std::string &s) {
 		operatorStack.pop();
 	}
 	return outputQueue;
+}
+
+void postfixToNFA(std::string &postfix) {
+
 }
 
 int main() {
