@@ -1,5 +1,7 @@
 #include <string>
 #include <iostream>
+#include <stack>
+#include <string>
 
 void addConcatSymbol(std::string &s) {
 	// *, (, ), |
@@ -20,6 +22,10 @@ void addConcatSymbol(std::string &s) {
 	}
 }
 
+bool isOperator(char c) {
+	return c == '.' || c == '*' || c =='|';
+}
+
 int getPrecedence(char c) {
 	if (c == '|')
 		return 0;
@@ -30,14 +36,54 @@ int getPrecedence(char c) {
 	else return -1;
 }
 
-void makePostfixForm(std::string &s) {
-
+std::string makePostfixForm(std::string &s) {
+	std::stack<char> operatorStack;
+	std::string outputQueue;
+	int len = s.length();
+	
+	for (int i = 0; i < len; i++) {
+		if ((s[i] >= 'a' && s[i] <= 'z') || (s[i] >= 'A' && s[i] <= 'Z')) // добавить проверку, что нет других символов
+			outputQueue.push_back(s[i]);
+		else if (isOperator(s[i])) {
+			while (	not(operatorStack.empty()) && 
+					isOperator(operatorStack.top()) && 
+					(getPrecedence(operatorStack.top() >= getPrecedence(s[i])))) {
+				outputQueue.push_back(operatorStack.top());
+				operatorStack.pop();
+			}
+			operatorStack.push(s[i]);
+		} else if (s[i] == '(') {
+			operatorStack.push(s[i]);
+		} else if (s[i] == ')') {
+			while (operatorStack.top() != '(') {
+				outputQueue.push_back(operatorStack.top());
+				operatorStack.pop();
+			}
+			if (operatorStack.top() == '(')
+				operatorStack.pop();
+		}
+	}
+	while (not(operatorStack.empty())) {
+		outputQueue.push_back(operatorStack.top());
+		operatorStack.pop();
+	}
+	return outputQueue;
 }
 
 int main() {
 	std::string regex;
+	std::string postfix;
 
+	std::cout << "Enter your regex: ";
 	std::cin >> regex;
 	addConcatSymbol(regex);
 	std::cout << regex << std::endl;
+	postfix = makePostfixForm(regex);
+	std::cout << postfix << std::endl;
 }
+
+
+
+
+
+
