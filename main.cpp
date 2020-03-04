@@ -11,7 +11,7 @@ void addConcatSymbol(std::string &s) {
 			continue;
 
 		if (i < s.length() - 1) {
-			if (s[i + 1] == '*' || s[i + 1] == '|' || s[i + 1] == ')') 
+			if (s[i + 1] == '*' || s[i + 1] == '*' || s[i + 1] == '|' || s[i + 1] == ')') 
 				continue; 
 			else {
 				s.insert(i + 1, ".");
@@ -23,7 +23,7 @@ void addConcatSymbol(std::string &s) {
 }
 
 bool isOperator(char c) {
-	return c == '.' || c == '*' || c =='|';
+	return c == '.' || c == '*' || c =='|' || c == '+';
 }
 
 int getPrecedence(char c) {
@@ -31,7 +31,7 @@ int getPrecedence(char c) {
 		return 0;
 	else if (c == '.')
 		return 1;
-	else if (c == '*')
+	else if (c == '*' || c == '+')
 		return 2;
 	else return -1;
 }
