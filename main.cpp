@@ -1,8 +1,10 @@
 #include <string>
 #include <iostream>
 #include <stack>
-#include <string>
+#include <vector>
 
+
+// STEP 1: insert concatenation operator to regular expression
 void addConcatSymbol(std::string &s) {
 	for (int i = 0; i < s.length(); i++) {
 		if (s[i] == '(' || s[i] == '|')
@@ -20,6 +22,7 @@ void addConcatSymbol(std::string &s) {
 	}
 }
 
+// STEP 2: convert regular expression to postfix form
 bool isOperator(char c) {
 	return c == '.' || c == '*' || c =='|' || c == '+';
 }
@@ -68,8 +71,125 @@ std::string makePostfixForm(std::string &s) {
 	return outputQueue;
 }
 
-void postfixToNFA(std::string &postfix) {
+// STEP 3: build NFA from regular expression
 
+struct trasition {
+	int fromState;
+	int toState;
+	char symbol;
+};
+
+struct epsilonTrasition {
+	int fromState;
+	int toState;
+};
+
+struct state {
+	int state;
+	std::vector<trasition> trasitions;
+	std::vector<epsilonTrasition> epsilonTrasitions;
+	bool isFinal;
+};
+
+state createState(int n, bool isFinal_) {
+	state newState;
+	newState.state = n;
+	newState.isFinal = isFinal_;
+	return newState;
+}
+
+trasition createTransition(int fromState_, int toState_, char symbol_) {
+	trasition newTransition;
+	newTransition.fromState = fromState_;
+	newTransition.toState = toState_;
+	newTransition.symbol = symbol_;
+	return newTransition;
+}
+
+void printTransition(trasition &transition_) {
+	std::cout << "from: " << transition_.fromState << " to: " << transition_.toState << " symbol: " << transition_.symbol << '\n';
+}
+
+void printEpsilonTransition(epsilonTrasition &transition_) {
+	std::cout << "from: " << transition_.fromState << " to: " << transition_.toState << " symbol: eps\n" << std::endl;;
+}
+
+void printState(state &state_) {
+	std::cout << "state: " << state_.state << " is final? " << state_.isFinal << std::endl;
+	for (int i = 0; i < state_.trasitions.size(); i++) {
+		printTransition(state_.trasitions[i]);
+	}
+	for (int i = 0; i < state_.epsilonTrasitions.size(); i++) {
+		printEpsilonTransition(state_.epsilonTrasitions[i]);
+	}
+}
+
+class NFA {
+public:
+	std::vector<state> states;
+	state *start, *end;
+
+	NFA() {
+		start = NULL;
+		end = NULL;
+	}
+
+	~NFA() {}
+
+	void addState(state &newState, bool isStart, bool isEnd) {
+		states.push_back(newState);
+		if (isStart) start = &newState;
+		if (isEnd) start = &newState;
+	}
+
+	void statesUnion(std::vector<state> newStates) {
+		states.insert(states.end(), newStates.begin(), newStates.end());
+	}
+
+	void printNFA() {
+		for (int i = 0; i < states.size(); i++) {
+			printState(states[i]);
+			std::cout << "start " << start->state << " end " << start->state << std::endl;
+			std::cout << "---------------" << std::endl;
+		}
+	}
+};
+
+void concatNFAs(NFA &a, NFA &b) {
+	a.end = b.start;
+	a.end->isFinal = false;
+	a.statesUnion(b.states);
+}
+
+void postfixToNFA(std::string &postfix) {
+	std::stack<NFA> automataStack;
+	int len = postfix.length();
+	int stateCounter = 0;
+
+	for (int i = 0; i < len; i++) {
+		switch (postfix[i]) {
+			case '|':
+				break;
+			case '*':
+				break;
+			case '.':
+				break;
+			case '+':
+				break;
+			default: 	// letters
+				state state1 = createState(stateCounter, false);
+				stateCounter++;
+				state state2 = createState(stateCounter, true);
+				stateCounter++;
+				state1.trasitions.push_back(createTransition(state1.state, state2.state, postfix[i]));
+				NFA newNFA;
+				newNFA.addState(state1, true, false);
+				newNFA.addState(state1, false, true);
+				automataStack.push(newNFA);
+				newNFA.printNFA();
+				break;
+		}
+	}
 }
 
 int main() {
@@ -82,6 +202,7 @@ int main() {
 	std::cout << regex << std::endl;
 	postfix = makePostfixForm(regex);
 	std::cout << postfix << std::endl;
+	postfixToNFA(postfix);
 }
 
 
