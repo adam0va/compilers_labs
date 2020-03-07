@@ -115,7 +115,8 @@ void printEpsilonTransition(epsilonTrasition &transition_) {
 }
 
 void printState(state &state_) {
-	std::cout << "state: " << state_.state << " is final? " << state_.isFinal << std::endl;
+	std::cout << "state " << state_.state << " is final? " << state_.isFinal << std::endl;
+	std::cout << "trasitions: ";
 	for (int i = 0; i < state_.trasitions.size(); i++) {
 		printTransition(state_.trasitions[i]);
 	}
@@ -139,7 +140,7 @@ public:
 	void addState(state &newState, bool isStart, bool isEnd) {
 		states.push_back(newState);
 		if (isStart) start = &newState;
-		if (isEnd) start = &newState;
+		if (isEnd) end = &newState;
 	}
 
 	void statesUnion(std::vector<state> newStates) {
@@ -147,9 +148,9 @@ public:
 	}
 
 	void printNFA() {
+		std::cout << "NFA: start " << start->state << " end " << end->state << std::endl;
 		for (int i = 0; i < states.size(); i++) {
 			printState(states[i]);
-			std::cout << "start " << start->state << " end " << start->state << std::endl;
 			std::cout << "---------------" << std::endl;
 		}
 	}
@@ -184,7 +185,7 @@ void postfixToNFA(std::string &postfix) {
 				state1.trasitions.push_back(createTransition(state1.state, state2.state, postfix[i]));
 				NFA newNFA;
 				newNFA.addState(state1, true, false);
-				newNFA.addState(state1, false, true);
+				newNFA.addState(state2, false, true);
 				automataStack.push(newNFA);
 				newNFA.printNFA();
 				break;
