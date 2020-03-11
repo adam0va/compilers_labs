@@ -86,48 +86,56 @@ struct epsilonTrasition {
 
 struct state {
 	int state;
-	std::vector<trasition> trasitions;
-	std::vector<epsilonTrasition> epsilonTrasitions;
+	std::vector<trasition*> trasitions;
+	std::vector<epsilonTrasition*> epsilonTrasitions;
 	bool isFinal;
 };
 
-state createState(int n, bool isFinal_) {
-	state newState;
-	newState.state = n;
-	newState.isFinal = isFinal_;
+state* createState(int n, bool isFinal_) {
+	state *newState = new state;
+	newState->state = n;
+	newState->isFinal = isFinal_;
 	return newState;
 }
 
-trasition createTransition(int fromState_, int toState_, char symbol_) {
-	trasition newTransition;
-	newTransition.fromState = fromState_;
-	newTransition.toState = toState_;
-	newTransition.symbol = symbol_;
+trasition* createTransition(int fromState_, int toState_, char symbol_) {
+	trasition *newTransition = new trasition;
+	newTransition->fromState = fromState_;
+	newTransition->toState = toState_;
+	newTransition->symbol = symbol_;
 	return newTransition;
 }
 
-void printTransition(trasition &transition_) {
-	std::cout << "from: " << transition_.fromState << " to: " << transition_.toState << " symbol: " << transition_.symbol << '\n';
+epsilonTrasition* createEpsilonTransition(int fromState_, int toState_) {
+	epsilonTrasition *newTransition = new epsilonTrasition;
+	newTransition->fromState = fromState_;
+	newTransition->toState = toState_;
+	return newTransition;
 }
 
-void printEpsilonTransition(epsilonTrasition &transition_) {
-	std::cout << "from: " << transition_.fromState << " to: " << transition_.toState << " symbol: eps\n" << std::endl;;
+void printTransition(trasition *transition_) {
+	std::cout << "from: " << transition_->fromState << " to: " << transition_->toState << " symbol: " << transition_->symbol << '\n';
 }
 
-void printState(state &state_) {
-	std::cout << "state " << state_.state << " is final? " << state_.isFinal << std::endl;
+void printEpsilonTransition(epsilonTrasition *transition_) {
+	std::cout << "from: " << transition_->fromState << " to: " << transition_->toState << " symbol: eps\n" << std::endl;;
+}
+
+void printState(state *state_) {
+	std::cout << "state " << state_->state << " is final? " << state_->isFinal << std::endl;
+	if (state_->isFinal) return;
 	std::cout << "trasitions: ";
-	for (int i = 0; i < state_.trasitions.size(); i++) {
-		printTransition(state_.trasitions[i]);
+	for (int i = 0; i < state_->trasitions.size(); i++) {
+		printTransition(state_->trasitions[i]);
 	}
-	for (int i = 0; i < state_.epsilonTrasitions.size(); i++) {
-		printEpsilonTransition(state_.epsilonTrasitions[i]);
+	for (int i = 0; i < state_->epsilonTrasitions.size(); i++) {
+		printEpsilonTransition(state_->epsilonTrasitions[i]);
 	}
 }
 
 class NFA {
 public:
-	std::vector<state> states;
+	std::vector<state*> states;
 	state *start, *end;
 
 	NFA() {
@@ -137,18 +145,18 @@ public:
 
 	~NFA() {}
 
-	void addState(state &newState, bool isStart, bool isEnd) {
+	void addState(state *newState, bool isStart, bool isEnd) {
 		states.push_back(newState);
-		if (isStart) start = &newState;
-		if (isEnd) end = &newState;
+		if (isStart) start = newState;
+		if (isEnd) end = newState;
 	}
 
-	void statesUnion(std::vector<state> newStates) {
+	void statesUnion(std::vector<state*> &newStates) {
 		states.insert(states.end(), newStates.begin(), newStates.end());
 	}
 
 	void printNFA() {
-		std::cout << "NFA: start " << start->state << " end " << end->state << std::endl;
+		std::cout << "\nNFA: start " << start->state << " end " << end->state << std::endl;
 		for (int i = 0; i < states.size(); i++) {
 			printState(states[i]);
 			std::cout << "---------------" << std::endl;
@@ -173,22 +181,36 @@ void postfixToNFA(std::string &postfix) {
 				break;
 			case '*':
 				break;
-			case '.':
+			case '.': {
+				NFA nfa1, nfa2;
+				nfa2 = automataStack.top();
+				automataStack.pop();
+				nfa1 = automataStack.top();
+				automataStack.pop();
+				epsilonTrasition *newEpsTrans = createEpsilonTransition(nfa1.end->state, nfa2.start->state);
+				nfa1.end->epsilonTrasitions.push_back(newEpsTrans);
+				nfa1.end->isFinal = false;
+				nfa1.end = nfa2.end;
+				nfa1.statesUnion(nfa2.states);
+				nfa1.printNFA();
+				automataStack.push(nfa1);
 				break;
+			}	
 			case '+':
 				break;
-			default: 	// letters
-				state state1 = createState(stateCounter, false);
+			default: {	// letters
+				state *state1 = createState(stateCounter, false);
 				stateCounter++;
-				state state2 = createState(stateCounter, true);
+				state *state2 = createState(stateCounter, true);
 				stateCounter++;
-				state1.trasitions.push_back(createTransition(state1.state, state2.state, postfix[i]));
+				state1->trasitions.push_back(createTransition(state1->state, state2->state, postfix[i]));
 				NFA newNFA;
 				newNFA.addState(state1, true, false);
 				newNFA.addState(state2, false, true);
-				automataStack.push(newNFA);
 				newNFA.printNFA();
+				automataStack.push(newNFA);
 				break;
+			}	
 		}
 	}
 }
