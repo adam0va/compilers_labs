@@ -2,7 +2,7 @@
 #include <iostream>
 #include <stack>
 #include <vector>
-
+#include <unordered_set>
 
 // STEP 1: insert concatenation operator to regular expression
 void addConcatSymbol(std::string &s) {
@@ -37,14 +37,16 @@ int getPrecedence(char c) {
 	else return -1;
 }
 
-std::string makePostfixForm(std::string &s) {
+std::string makePostfixForm(std::string &s, std::unordered_set<char> &alfabet) {
 	std::stack<char> operatorStack;
 	std::string outputQueue;
 	int len = s.length();
 	
 	for (int i = 0; i < len; i++) {
-		if ((s[i] >= 'a' && s[i] <= 'z') || (s[i] >= 'A' && s[i] <= 'Z')) // добавить проверку, что нет других символов
+		if ((s[i] >= 'a' && s[i] <= 'z') || (s[i] >= 'A' && s[i] <= 'Z')) {
 			outputQueue.push_back(s[i]);
+			alfabet.insert(s[i]);
+		}
 		else if (isOperator(s[i])) {
 			while (	not(operatorStack.empty()) && 
 					isOperator(operatorStack.top()) && 
@@ -72,7 +74,6 @@ std::string makePostfixForm(std::string &s) {
 }
 
 // STEP 3: build NFA from regular expression
-
 struct trasition {
 	int fromState;
 	int toState;
@@ -164,13 +165,7 @@ public:
 	}
 };
 
-void concatNFAs(NFA &a, NFA &b) {
-	a.end = b.start;
-	a.end->isFinal = false;
-	a.statesUnion(b.states);
-}
-
-void postfixToNFA(std::string &postfix) {
+NFA postfixToNFA(std::string &postfix) {
 	std::stack<NFA> automataStack;
 	int len = postfix.length();
 	int stateCounter = 0;
@@ -272,19 +267,35 @@ void postfixToNFA(std::string &postfix) {
 			}	
 		}
 	}
+
+	return automataStack.top();
+}
+
+// STEP 4: building DFA from NFA (Thompson's algoritm)
+void NFAtoDFA(NFA nfa) {
+
+	
 }
 
 int main() {
 	std::string regex;
 	std::string postfix;
+	std::unordered_set<char> alfabet;
+	NFA nfa;
 
-	std::cout << "Enter your regex: ";
+	std::cout << "Enter your regex in infix form: ";
 	std::cin >> regex;
 	addConcatSymbol(regex);
-	std::cout << regex << std::endl;
-	postfix = makePostfixForm(regex);
+	std::cout << "Postfix form of your regex:" << regex << std::endl;
+	postfix = makePostfixForm(regex, alfabet);
 	std::cout << postfix << std::endl;
-	postfixToNFA(postfix);
+	std::unordered_set<char>::iterator itr;
+	std::cout << "alfabet: "; 
+	for (itr = alfabet.begin(); itr != alfabet.end(); itr++) 
+        std::cout << (*itr) << ' ';
+    std::cout << std::endl; 
+	nfa = postfixToNFA(postfix);
+
 }
 
 
