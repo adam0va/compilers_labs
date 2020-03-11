@@ -202,8 +202,27 @@ void postfixToNFA(std::string &postfix) {
 				automataStack.push(nfa1);
 				break;
 			}
-			case '*':
+			case '*': {
+				NFA nfa;
+				nfa = automataStack.top();
+				automataStack.pop();
+				state *stateStart = createState(stateCounter, false);
+				stateCounter++;
+				state *stateEnd = createState(stateCounter, true);
+				stateCounter++;
+				nfa.end->isFinal = false;
+				stateStart->epsilonTrasitions.push_back(createEpsilonTransition(stateStart->state, nfa.start->state));
+				nfa.end->epsilonTrasitions.push_back(createEpsilonTransition(nfa.end->state, stateEnd->state));
+				nfa.end->epsilonTrasitions.push_back(createEpsilonTransition(nfa.end->state, nfa.start->state));
+				stateStart->epsilonTrasitions.push_back(createEpsilonTransition(stateStart->state, stateEnd->state));
+				nfa.start = stateStart;
+				nfa.end = stateEnd;
+				nfa.states.push_back(stateStart);
+				nfa.states.push_back(stateEnd);
+				nfa.printNFA();
+				automataStack.push(nfa);
 				break;
+			}
 			case '.': {
 				NFA nfa1, nfa2;
 				nfa2 = automataStack.top();
