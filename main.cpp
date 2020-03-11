@@ -192,7 +192,7 @@ void postfixToNFA(std::string &postfix) {
 				stateStart->epsilonTrasitions.push_back(createEpsilonTransition(stateStart->state, nfa1.start->state));
 				stateStart->epsilonTrasitions.push_back(createEpsilonTransition(stateStart->state, nfa2.start->state));
 				nfa1.end->epsilonTrasitions.push_back(createEpsilonTransition(nfa1.end->state, stateEnd->state));
-				nfa2.end->epsilonTrasitions4.push_back(createEpsilonTransition(nfa2.end->state, stateEnd->state));
+				nfa2.end->epsilonTrasitions.push_back(createEpsilonTransition(nfa2.end->state, stateEnd->state));
 				nfa1.statesUnion(nfa2.states);
 				nfa1.states.push_back(stateStart);
 				nfa1.states.push_back(stateEnd);
@@ -210,8 +210,7 @@ void postfixToNFA(std::string &postfix) {
 				automataStack.pop();
 				nfa1 = automataStack.top();
 				automataStack.pop();
-				epsilonTrasition *newEpsTrans = createEpsilonTransition(nfa1.end->state, nfa2.start->state);
-				nfa1.end->epsilonTrasitions.push_back(newEpsTrans);
+				nfa1.end->epsilonTrasitions.push_back(createEpsilonTransition(nfa1.end->state, nfa2.start->state));
 				nfa1.end->isFinal = false;
 				nfa1.end = nfa2.end;
 				nfa1.statesUnion(nfa2.states);
@@ -219,8 +218,26 @@ void postfixToNFA(std::string &postfix) {
 				automataStack.push(nfa1);
 				break;
 			}	
-			case '+':
+			case '+': {
+				NFA nfa;
+				nfa = automataStack.top();
+				automataStack.pop();
+				state *stateStart = createState(stateCounter, false);
+				stateCounter++;
+				state *stateEnd = createState(stateCounter, true);
+				stateCounter++;
+				nfa.end->isFinal = false;
+				stateStart->epsilonTrasitions.push_back(createEpsilonTransition(stateStart->state, nfa.start->state));
+				nfa.end->epsilonTrasitions.push_back(createEpsilonTransition(nfa.end->state, stateEnd->state));
+				nfa.end->epsilonTrasitions.push_back(createEpsilonTransition(nfa.end->state, nfa.start->state));
+				nfa.start = stateStart;
+				nfa.end = stateEnd;
+				nfa.states.push_back(stateStart);
+				nfa.states.push_back(stateEnd);
+				nfa.printNFA();
+				automataStack.push(nfa);
 				break;
+			}
 			default: {	// letters
 				state *state1 = createState(stateCounter, false);
 				stateCounter++;
