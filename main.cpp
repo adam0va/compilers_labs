@@ -3,6 +3,9 @@
 #include <stack>
 #include <vector>
 #include <unordered_set>
+#include <set>
+#include <queue>
+#include <map>
 
 // STEP 1: insert concatenation operator to regular expression
 void addConcatSymbol(std::string &s) {
@@ -37,7 +40,7 @@ int getPrecedence(char c) {
 	else return -1;
 }
 
-std::string makePostfixForm(std::string &s, std::unordered_set<char> &alfabet) {
+std::string makePostfixForm(std::string &s, std::set<char> &alfabet) {
 	std::stack<char> operatorStack;
 	std::string outputQueue;
 	int len = s.length();
@@ -136,7 +139,7 @@ void printState(state *state_) {
 
 class NFA {
 public:
-	std::vector<state*> states;
+	std::map<int, state*> states;
 	state *start, *end;
 
 	NFA() {
@@ -147,19 +150,21 @@ public:
 	~NFA() {}
 
 	void addState(state *newState, bool isStart, bool isEnd) {
-		states.push_back(newState);
+		states.insert(std::pair<int, state*>(newState->state, newState));
+		//states.push_back(newState);
 		if (isStart) start = newState;
 		if (isEnd) end = newState;
 	}
 
-	void statesUnion(std::vector<state*> &newStates) {
-		states.insert(states.end(), newStates.begin(), newStates.end());
+	void statesUnion(std::map<int, state*> &newStates) {
+		states.insert(newStates.begin(), newStates.end());
 	}
 
 	void printNFA() {
 		std::cout << "\nNFA: start " << start->state << " end " << end->state << std::endl;
-		for (int i = 0; i < states.size(); i++) {
-			printState(states[i]);
+		std::map<int, state*>::iterator it;
+		for (it = states.begin(); it != states.end(); ++it) {
+			printState(it->second);
 			std::cout << "---------------" << std::endl;
 		}
 	}
@@ -181,6 +186,7 @@ NFA postfixToNFA(std::string &postfix) {
 				state *stateStart = createState(stateCounter, false);
 				stateCounter++;
 				state *stateEnd = createState(stateCounter, true);
+				std::cout << "end state: " << stateEnd->state << std::endl;
 				stateCounter++;
 				nfa1.end->isFinal = false;
 				nfa2.end->isFinal = false;
@@ -189,8 +195,8 @@ NFA postfixToNFA(std::string &postfix) {
 				nfa1.end->epsilonTrasitions.push_back(createEpsilonTransition(nfa1.end->state, stateEnd->state));
 				nfa2.end->epsilonTrasitions.push_back(createEpsilonTransition(nfa2.end->state, stateEnd->state));
 				nfa1.statesUnion(nfa2.states);
-				nfa1.states.push_back(stateStart);
-				nfa1.states.push_back(stateEnd);
+				nfa1.states.insert(std::pair<int, state*>(stateStart->state, stateStart));
+				nfa1.states.insert(std::pair<int, state*>(stateEnd->state, stateEnd));
 				nfa1.start = stateStart;
 				nfa1.end = stateEnd;
 				nfa1.printNFA();
@@ -212,8 +218,8 @@ NFA postfixToNFA(std::string &postfix) {
 				stateStart->epsilonTrasitions.push_back(createEpsilonTransition(stateStart->state, stateEnd->state));
 				nfa.start = stateStart;
 				nfa.end = stateEnd;
-				nfa.states.push_back(stateStart);
-				nfa.states.push_back(stateEnd);
+				nfa.states.insert(std::pair<int, state*>(stateStart->state, stateStart));
+				nfa.states.insert(std::pair<int, state*>(stateEnd->state, stateEnd));
 				nfa.printNFA();
 				automataStack.push(nfa);
 				break;
@@ -246,8 +252,8 @@ NFA postfixToNFA(std::string &postfix) {
 				nfa.end->epsilonTrasitions.push_back(createEpsilonTransition(nfa.end->state, nfa.start->state));
 				nfa.start = stateStart;
 				nfa.end = stateEnd;
-				nfa.states.push_back(stateStart);
-				nfa.states.push_back(stateEnd);
+				nfa.states.insert(std::pair<int, state*>(stateStart->state, stateStart));
+				nfa.states.insert(std::pair<int, state*>(stateEnd->state, stateEnd));
 				nfa.printNFA();
 				automataStack.push(nfa);
 				break;
@@ -271,31 +277,46 @@ NFA postfixToNFA(std::string &postfix) {
 	return automataStack.top();
 }
 
-// STEP 4: building DFA from NFA (Thompson's algoritm)
-void NFAtoDFA(NFA nfa) {
+// STEP 4: building DFA from NFA
+std::set<int> epsilonClosure(NFA nfa, state *curState) {
+	std::set<int> curEpsilonClosure;
 
-	
+	curEpsilonClosure.insert(curState->state);
+	int epsilonTrasitionsNumber = curState->epsilonTrasitions.size();
+	for (int i = 0; i < epsilonTrasitionsNumber; i++) {
+		std::set<int> newSet;
+		int from = curState->epsilonTrasitions[i]->toState;
+		newSet = epsilonClosure(nfa, nfa.states[from]);
+		curEpsilonClosure.insert(newSet.begin(), newSet.end());
+	}
+	std::set<int>::iterator itr;
+	std::cout << "epsilonClosure " << curState->state << ": "; 
+	for (itr = curEpsilonClosure.begin(); itr != curEpsilonClosure.end(); itr++) 
+        std::cout << (*itr) << ' ';
+    std::cout << std::endl;
+	return curEpsilonClosure;
 }
+
 
 int main() {
 	std::string regex;
 	std::string postfix;
-	std::unordered_set<char> alfabet;
+	std::set<char> alfabet;
 	NFA nfa;
 
 	std::cout << "Enter your regex in infix form: ";
 	std::cin >> regex;
 	addConcatSymbol(regex);
-	std::cout << "Postfix form of your regex:" << regex << std::endl;
+	std::cout << "Postfix form of your regex: " << regex << std::endl;
 	postfix = makePostfixForm(regex, alfabet);
 	std::cout << postfix << std::endl;
-	std::unordered_set<char>::iterator itr;
+	std::set<char>::iterator itr;
 	std::cout << "alfabet: "; 
 	for (itr = alfabet.begin(); itr != alfabet.end(); itr++) 
         std::cout << (*itr) << ' ';
     std::cout << std::endl; 
 	nfa = postfixToNFA(postfix);
-
+	epsilonClosure(nfa, nfa.start);
 }
 
 
