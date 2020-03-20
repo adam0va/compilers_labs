@@ -2,9 +2,7 @@
 #include <iostream>
 #include <stack>
 #include <vector>
-#include <unordered_set>
 #include <set>
-#include <queue>
 #include <map>
 #include <utility>
 
@@ -315,7 +313,8 @@ class DFA
 {
 public:
 	std::map<int, DFAState*> states;
-	DFAState *start, *end;
+	DFAState *start, *end; 
+
 	DFA() {
 		start = NULL;
 		end = NULL;
@@ -399,7 +398,7 @@ DFA NFAtoDFA(NFA nfa, std::set<char> alfabet) {
 	std::set<int> startState;
 	std::vector<state> DFAStates;
 	std::vector<std::pair<int, std::set<int> > > stateQueue; // поменять очередь на вектор для норм проверки
-	int stateCounter = 0;
+	int stateCounter = 1;
 	DFA dfa;
 
 	startState = epsilonClosure(nfa, nfa.start);
@@ -448,6 +447,36 @@ DFA NFAtoDFA(NFA nfa, std::set<char> alfabet) {
 	return dfa;
 }
 
+// STEP 5: minimize DFA
+void addDeadState(DFA &dfa, std::set<char> &alfabet) { // add dead state where non-excisting edges go
+	std::set<int> emptySet;
+	DFAState *deadState = createDFAState(0, emptySet, false);
+	for (std::set<char>::iterator itr = alfabet.begin(); itr != alfabet.end(); ++itr) {
+		deadState->transitions.insert(std::make_pair((*itr), 0));
+		for (std::map<int, DFAState*>::iterator stateItr = dfa.states.begin(); stateItr != dfa.states.end(); ++stateItr) {
+			if (stateItr->second->transitions.count((*itr)) < 1) {
+				stateItr->second->transitions.insert(std::make_pair((*itr), 0));
+			}
+		}
+	}
+	dfa.addDFAState(deadState, false, false);	
+}
+
+std::map<int, std::map<char, std::set<int> > > findReversedEdges (DFA &dfa) {
+	std::map<int, DFAState*> states = dfa.states;
+	std::map<int, std::map<char, std::set<int> > > revEdges; 
+
+	for (std::map<int, DFAState*>::iterator itr = states.begin(); itr != states.end(); ++itr) {
+		DFAState *state = itr->second;
+
+	}
+}
+
+void minimizeDFA(DFA &dfa, std::set<char> alfabet) {
+	addDeadState(dfa, alfabet);
+	dfa.printDFA();
+}
+
 
 int main() {
 	std::string regex;
@@ -465,11 +494,12 @@ int main() {
 	std::set<char>::iterator itr;
 	std::cout << "alfabet: "; 
 	for (itr = alfabet.begin(); itr != alfabet.end(); itr++) 
-        std::cout << (*itr) << ' ';
-    std::cout << std::endl; 
+		std::cout << (*itr) << ' ';
+	std::cout << std::endl; 
 	nfa = postfixToNFA(postfix);
 	//epsilonClosure(nfa, nfa.start);
-	NFAtoDFA(nfa, alfabet);
+	dfa =  NFAtoDFA(nfa, alfabet);
+	minimizeDFA(dfa, alfabet);
 }
 
 
