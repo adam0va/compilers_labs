@@ -5,6 +5,7 @@
 #include <set>
 #include <map>
 #include <utility>
+#include "stdio.h"
 
 // STEP 1: insert concatenation operator to regular expression
 void addConcatSymbol(std::string &s) {
@@ -462,20 +463,71 @@ void addDeadState(DFA &dfa, std::set<char> &alfabet) { // add dead state where n
 	dfa.addDFAState(deadState, false, false);	
 }
 
-std::map<int, std::map<char, std::set<int> > > findReversedEdges (DFA &dfa) {
-	std::map<int, DFAState*> states = dfa.states;
-	std::map<int, std::map<char, std::set<int> > > revEdges; 
-
-	for (std::map<int, DFAState*>::iterator itr = states.begin(); itr != states.end(); ++itr) {
-		DFAState *state = itr->second;
-
+void printIntSet(std::set<int> &set) {
+	for (std::set<int>::iterator itr = set.begin(); itr != set.end(); ++itr) {
+		printf("%d ", (*itr));
 	}
+	printf("\n");
+}
+
+void printPartition(std::vector<std::set<int> > &partition) {
+	printf("partition: \n");
+	int length = partition.size();
+	for (int i = 0; i < length; i++) {
+		printf("state set %d: ", i);
+		printIntSet(partition[i]);
+	}
+	printf("======\n");
+}
+
+void initialPartition(DFA &dfa, std::vector<std::set<int> > &partition) {
+	std::set<int> final, notFinal;
+	for (std::map<int, DFAState*>::iterator itr = dfa.states.begin(); itr != dfa.states.end(); ++itr) {
+		itr->second->isFinal ? final.insert(itr->second->state) : notFinal.insert(itr->second->state);
+	}
+	partition.push_back(notFinal);
+	partition.push_back(final);
+}
+
+void printQueue(std::vector<std::pair<int, char> > queue) {
+	int length = queue.size();
+	printf("queue: \n");
+	for (int i = 0; i < length; i++) {
+		printf("%d %c\n", queue[i].first, queue[i].second);
+	}
+	printf("======\n");
 }
 
 void minimizeDFA(DFA &dfa, std::set<char> alfabet) {
+	std::vector<std::set<int> > partition;
+	std::vector<std::pair<int, char> > queue;
+
 	addDeadState(dfa, alfabet);
 	dfa.printDFA();
+	initialPartition(dfa, partition);
+	printPartition(partition);
+
+	for (int i = 0; i < 2; i++) {
+		for (std::set<char>::iterator alfabetItr = alfabet.begin(); alfabetItr != alfabet.end(); ++alfabetItr) {
+			queue.push_back(std::make_pair(i, (*alfabetItr)));
+		}
+	}
+	printQueue(queue);
+
 }
+
+
+/*
+std::map<std::pair<int, char>, std::set<int> > findReversedEdges (DFA &dfa) {
+	std::map<int, DFAState*> states = dfa.states;
+	std::map<std::pair<int, char>, std::set<int> > revEdges; 
+
+	int size = states.size();
+	for (int i = 0; i < size; i++) {
+
+	}
+}
+*/
 
 
 int main() {
