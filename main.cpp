@@ -470,20 +470,28 @@ void printIntSet(std::set<int> &set) {
 	printf("\n");
 }
 
-void printPartition(std::vector<std::set<int> > &partition) {
+void printIntVector(std::vector<int> &vector) {
+	for (std::vector<int>::iterator itr = vector.begin(); itr != vector.end(); ++itr) {
+		printf("%d ", (*itr));
+	}
+	//printf("\n");
+}
+
+void printPartition(std::vector<std::vector<int> > &partition) {
 	printf("partition: \n");
 	int length = partition.size();
 	for (int i = 0; i < length; i++) {
 		printf("state set %d: ", i);
-		printIntSet(partition[i]);
+		printIntVector(partition[i]);
+		printf("\n");
 	}
 	printf("======\n");
 }
 
-void initialPartition(DFA &dfa, std::vector<std::set<int> > &partition) {
-	std::set<int> final, notFinal;
+void initialPartition(DFA &dfa, std::vector<std::vector<int> > &partition) {
+	std::vector<int> final, notFinal;
 	for (std::map<int, DFAState*>::iterator itr = dfa.states.begin(); itr != dfa.states.end(); ++itr) {
-		itr->second->isFinal ? final.insert(itr->second->state) : notFinal.insert(itr->second->state);
+		itr->second->isFinal ? final.push_back(itr->second->state) : notFinal.push_back(itr->second->state);
 	}
 	partition.push_back(notFinal);
 	partition.push_back(final);
@@ -498,10 +506,50 @@ void printQueue(std::vector<std::pair<int, char> > queue) {
 	printf("======\n");
 }
 
-void minimizeDFA(DFA &dfa, std::set<char> alfabet) {
-	std::vector<std::set<int> > partition;
-	std::vector<std::pair<int, char> > queue;
+int findMax(std::set<char> &alfabet) {
+    int max = 0; 
+    if (!alfabet.empty()) 
+        max = *(alfabet.rbegin()); 
+    return max; 
+} 
 
+void printTable(std::vector<std::vector<std::vector<int> > > &transitionsTable, std::set<char> &alfabet, int numberOfStates) {
+	
+	for (std::set<char>::iterator itr = alfabet.begin(); itr != alfabet.end(); ++itr) {
+		printf("   %c       ", (*itr));
+	}
+	
+	printf("\n");
+	for (int i = 0; i < numberOfStates + 1; i++) {
+		printf("%d  ", i);
+		for (std::set<char>::iterator itr = alfabet.begin(); itr != alfabet.end(); ++itr) {
+			printIntVector(transitionsTable[i][(*itr)]);
+			printf("___  ");
+		}
+		printf("\n");
+	}
+}
+
+void makeBackTransitionsTable(DFA &dfa, std::vector<std::vector<std::vector<int> > > &transitionsTable, std::set<char> &alfabet) {
+	// просмотриваем каждое состояние автомата
+	for (std::map<int, DFAState*>::iterator stateItr = dfa.states.begin(); stateItr != dfa.states.end(); ++stateItr) {
+		//и каждую букву алфавита (из каждого состояния есть переход по каждой букве)
+		for (std::set<char>::iterator alfabetItr = alfabet.begin(); alfabetItr != alfabet.end(); ++alfabetItr) {
+			// добавляем элемент таблицы по индексу [куда переход по букве][буква] 
+			// номер состояния, откуда переход
+			transitionsTable[stateItr->second->transitions[(*alfabetItr)]][(*alfabetItr)].push_back(stateItr->first);
+		}
+	}
+
+}
+
+void minimizeDFA(DFA &dfa, std::set<char> alfabet) {
+	std::vector<std::vector<int> > partition;
+	std::vector<std::pair<int, char> > queue;
+	int numberOfStates = dfa.states.size();
+	int maxLetterCode = findMax(alfabet);
+	std::vector<std::vector<std::vector<int> > > transitionsTable(numberOfStates+1, std::vector<std::vector<int> >(maxLetterCode+1, std::vector<int>(0)));
+	
 	addDeadState(dfa, alfabet);
 	dfa.printDFA();
 	initialPartition(dfa, partition);
@@ -513,21 +561,31 @@ void minimizeDFA(DFA &dfa, std::set<char> alfabet) {
 		}
 	}
 	printQueue(queue);
+	makeBackTransitionsTable(dfa, transitionsTable, alfabet);
+	printTable(transitionsTable, alfabet, numberOfStates);
+	while (not(queue.empty())) {
+		std::pair<int, char> splitter = queue.front();
+		queue.erase(queue.begin());
+		std::vector<int> splitterSet = partition[splitter.first];
+		char splitterLetter = splitter.second;
+		std::vector<int> toSplitter, notToSplitter;
 
-}
+		for (std::vector<int>::iterator itr = splitterSet.begin(); itr != splitterSet.end(); ++itr) {
+			toSplitter.insert(toSplitter.end(), transitionsTable[(*itr)][splitterLetter].begin(),
+				transitionsTable[(*itr)][splitterLetter].end());
+		}
+		printf("splitter: ");
+		printIntVector(splitterSet);
+		printf("\nto splitter by %c: ", splitterLetter);
+		printIntVector(toSplitter);
+		printf("\n======\n");
+		for (int i = 0; i < partition.size(); i++) {
 
-
-/*
-std::map<std::pair<int, char>, std::set<int> > findReversedEdges (DFA &dfa) {
-	std::map<int, DFAState*> states = dfa.states;
-	std::map<std::pair<int, char>, std::set<int> > revEdges; 
-
-	int size = states.size();
-	for (int i = 0; i < size; i++) {
-
+		}
 	}
+
 }
-*/
+
 
 
 int main() {
