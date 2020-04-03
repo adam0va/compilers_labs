@@ -185,7 +185,6 @@ NFA postfixToNFA(std::string &postfix) {
 				state *stateStart = createState(stateCounter, false);
 				stateCounter++;
 				state *stateEnd = createState(stateCounter, true);
-				std::cout << "end state: " << stateEnd->state << std::endl;
 				stateCounter++;
 				nfa1.end->isFinal = false;
 				nfa2.end->isFinal = false;
@@ -198,7 +197,7 @@ NFA postfixToNFA(std::string &postfix) {
 				nfa1.states.insert(std::pair<int, state*>(stateEnd->state, stateEnd));
 				nfa1.start = stateStart;
 				nfa1.end = stateEnd;
-				nfa1.printNFA();
+				//nfa1.printNFA();
 				automataStack.push(nfa1);
 				break;
 			}
@@ -219,7 +218,7 @@ NFA postfixToNFA(std::string &postfix) {
 				nfa.end = stateEnd;
 				nfa.states.insert(std::pair<int, state*>(stateStart->state, stateStart));
 				nfa.states.insert(std::pair<int, state*>(stateEnd->state, stateEnd));
-				nfa.printNFA();
+				//nfa.printNFA();
 				automataStack.push(nfa);
 				break;
 			}
@@ -233,7 +232,7 @@ NFA postfixToNFA(std::string &postfix) {
 				nfa1.end->isFinal = false;
 				nfa1.end = nfa2.end;
 				nfa1.statesUnion(nfa2.states);
-				nfa1.printNFA();
+				//nfa1.printNFA();
 				automataStack.push(nfa1);
 				break;
 			}	
@@ -253,7 +252,7 @@ NFA postfixToNFA(std::string &postfix) {
 				nfa.end = stateEnd;
 				nfa.states.insert(std::pair<int, state*>(stateStart->state, stateStart));
 				nfa.states.insert(std::pair<int, state*>(stateEnd->state, stateEnd));
-				nfa.printNFA();
+				//nfa.printNFA();
 				automataStack.push(nfa);
 				break;
 			}
@@ -266,7 +265,7 @@ NFA postfixToNFA(std::string &postfix) {
 				NFA newNFA;
 				newNFA.addState(state1, true, false);
 				newNFA.addState(state2, false, true);
-				newNFA.printNFA();
+				//newNFA.printNFA();
 				automataStack.push(newNFA);
 				break;
 			}	
@@ -356,11 +355,11 @@ std::set<int> epsilonClosure(NFA nfa, state *curState) {
 		newSet = epsilonClosure(nfa, nfa.states[from]);
 		curEpsilonClosure.insert(newSet.begin(), newSet.end());
 	}
-	std::set<int>::iterator itr;
+	std::set<int>::iterator itr; /*
 	std::cout << "epsilonClosure " << curState->state << ": "; 
 	for (itr = curEpsilonClosure.begin(); itr != curEpsilonClosure.end(); ++itr) 
         std::cout << (*itr) << ' ';
-    std::cout << std::endl;
+    std::cout << std::endl;*/
 	return curEpsilonClosure;
 }
 
@@ -372,26 +371,18 @@ bool isFinal(NFA nfa, std::set<int> states) {
 }
 
 int stateExcists(DFA &dfa, std::vector<std::pair<int, std::set<int> > > queue, std::set<int> set) {
-	// std::cout << "\ncheck the set: ";
-	// for (std::set<int>::iterator itr = set.begin(); itr != set.end(); ++itr) {
-	// 	std::cout << (*itr) <<  ' ';
-	// }
-	std::cout << '\n';
 	for (std::vector<std::pair<int, std::set<int> > >::iterator queueItr = queue.begin(); 
 			queueItr != queue.end(); ++queueItr) {
 		if (set == (*queueItr).second) {
-			std::cout << "state excists" << std::endl;
 			return (*queueItr).first;
 		}
 	}
 	std::map<int, DFAState*> &states = dfa.states;
 	for (std::map<int, DFAState*>::iterator itr = states.begin(); itr != states.end(); ++itr) {
 		if ((*itr).second->fromNFAstates == set) {
-			std::cout << "state excists" << std::endl;
 			return (*itr).first;
 		}
 	}
-	std::cout << "state does not excist" << std::endl;
 	return -1;
 }
 
@@ -488,10 +479,16 @@ void printPartition(std::vector<std::vector<int> > &partition) {
 	printf("======\n");
 }
 
-void initialPartition(DFA &dfa, std::vector<std::vector<int> > &partition) {
+void initialPartition(DFA &dfa, std::vector<std::vector<int> > &partition, std::vector<int> &classAttachment) {
 	std::vector<int> final, notFinal;
 	for (std::map<int, DFAState*>::iterator itr = dfa.states.begin(); itr != dfa.states.end(); ++itr) {
-		itr->second->isFinal ? final.push_back(itr->second->state) : notFinal.push_back(itr->second->state);
+		if (itr->second->isFinal) {
+			final.push_back(itr->second->state);
+			classAttachment[itr->first] = 1;
+		} else {
+			notFinal.push_back(itr->second->state);
+			classAttachment[itr->first] = 0;
+		}
 	}
 	partition.push_back(notFinal);
 	partition.push_back(final);
@@ -543,49 +540,106 @@ void makeBackTransitionsTable(DFA &dfa, std::vector<std::vector<std::vector<int>
 
 }
 
+bool hasAllTransitions(DFA &dfa, int alfabetPower) {
+	int statesPower = dfa.states.size();
+	int transitionsPower = 0;
+
+	for (std::map<int, DFAState*>::iterator itr = dfa.states.begin(); itr != dfa.states.end(); ++itr) 
+		transitionsPower += itr->second->transitions.size();
+	return statesPower * alfabetPower == transitionsPower;
+}
+
 void minimizeDFA(DFA &dfa, std::set<char> alfabet) {
-	std::vector<std::vector<int> > partition;
-	std::vector<std::pair<int, char> > queue;
 	int numberOfStates = dfa.states.size();
 	int maxLetterCode = findMax(alfabet);
-	std::vector<std::vector<std::vector<int> > > transitionsTable(numberOfStates+1, std::vector<std::vector<int> >(maxLetterCode+1, std::vector<int>(0)));
-	
-	addDeadState(dfa, alfabet);
-	dfa.printDFA();
-	initialPartition(dfa, partition);
+	printf("\n");
+	std::vector<std::vector<int> > partition; // разбиение
+	std::vector<std::pair<int, char> > queue; // очередь
+	std::vector<std::vector<std::vector<int> > > transitionsTable(numberOfStates+1, 
+		std::vector<std::vector<int> >(maxLetterCode+1, std::vector<int>(0)));
+	std::vector<int> classAttachment(numberOfStates); // classAttachment[i] - какому классу разбиения принадлежит состояние i
+	std::map<int, std::vector<int> > classConsistency; // какому номеру класса какие состояния соответствуют
+	// добавляем состояние, в которое ведут ребра из всех вершин по всем символам
+	// если количество переходов != количество состояний * мощность алфавита
+	if (not(hasAllTransitions(dfa, alfabet.size()))) {
+		addDeadState(dfa, alfabet);
+		dfa.printDFA();
+	}
+
+	// начальное разбиение: допускающие и недопускающие состояния, заполнение вектора classAttachment
+	initialPartition(dfa, partition, classAttachment);
 	printPartition(partition);
 
+	// заполняем очередь парами: класс, буква алфавита
 	for (int i = 0; i < 2; i++) {
-		for (std::set<char>::iterator alfabetItr = alfabet.begin(); alfabetItr != alfabet.end(); ++alfabetItr) {
+		for (std::set<char>::iterator alfabetItr = alfabet.begin(); alfabetItr != alfabet.end(); 
+			++alfabetItr) {
 			queue.push_back(std::make_pair(i, (*alfabetItr)));
 		}
 	}
-	printQueue(queue);
+
+	// заполняем обратную таблицу переходов
 	makeBackTransitionsTable(dfa, transitionsTable, alfabet);
 	printTable(transitionsTable, alfabet, numberOfStates);
+
 	while (not(queue.empty())) {
 		std::pair<int, char> splitter = queue.front();
-		queue.erase(queue.begin());
-		std::vector<int> splitterSet = partition[splitter.first];
+		std::vector<int> splitterClass = partition[splitter.first];
 		char splitterLetter = splitter.second;
-		std::vector<int> toSplitter, notToSplitter;
 
-		for (std::vector<int>::iterator itr = splitterSet.begin(); itr != splitterSet.end(); ++itr) {
-			toSplitter.insert(toSplitter.end(), transitionsTable[(*itr)][splitterLetter].begin(),
-				transitionsTable[(*itr)][splitterLetter].end());
+		classConsistency.clear();
+		queue.erase(queue.begin());
+		// для каждого состояния из класса в сплиттере
+		for (int i = 0; i < splitterClass.size(); i++) {
+			// для каждого состояния автомата с ребром в сплиттер
+			std::vector<int> statesToSplitter = transitionsTable[splitterClass[i]][splitterLetter];
+			int statesToSplitterPower = statesToSplitter.size();
+			
+			for (int r = 0; r < statesToSplitterPower; r++) {
+				// из какого класса состояние с ребром в сплиттер?
+				int fromClass = classAttachment[transitionsTable[splitterClass[i]][splitterLetter][r]];
+				if (classConsistency.find(fromClass) == classConsistency.end()) {
+					std::vector<int> v;
+					classConsistency[fromClass] = v;
+				}		
+				classConsistency[fromClass].push_back(transitionsTable[splitterClass[i]][splitterLetter][r]);
+			}
 		}
-		printf("splitter: ");
-		printIntVector(splitterSet);
-		printf("\nto splitter by %c: ", splitterLetter);
-		printIntVector(toSplitter);
-		printf("\n======\n");
-		for (int i = 0; i < partition.size(); i++) {
 
+		// теперь обновить разбиение с учетом того, разделились ли состояния
+		for (std::map<int, std::vector<int> >::iterator itr = classConsistency.begin(); 
+			itr != classConsistency.end(); ++itr) {
+			int fromClass = itr->first;
+			// если не все состояния из класса переходят в сплиттер, то это состояния надо разделить на два
+			if (classConsistency[fromClass].size() < partition[fromClass].size()) {
+				// добавляем пустое состояние в разбиение
+				std::vector<int> v;
+				partition.push_back(v);
+				int newClassNumber = partition.size() - 1;
+				// каждое состояния в выделяемом классе
+				for (int i = 0; i < classConsistency[fromClass].size(); i++) {
+					// удаляем из старого класса
+					partition[fromClass].erase(std::find(partition[fromClass].begin(), 
+						partition[fromClass].end(), classConsistency[fromClass][i]));
+					// добавляем в новый класс
+					partition[newClassNumber].push_back(classConsistency[fromClass][i]);
+				}
+				if (partition[newClassNumber] > partition[fromClass])
+					std::swap(partition[fromClass], partition[newClassNumber]);
+				// меняем номера класса в массиве
+				for (int i = 0; i < partition[newClassNumber].size(); i++)
+					classAttachment[partition[newClassNumber][i]] = newClassNumber;
+				// добавляем новые классы в очередь
+				for (std::set<char>::iterator alfabetItr = alfabet.begin(); alfabetItr != alfabet.end(); 
+					++alfabetItr)
+					queue.push_back(std::make_pair(newClassNumber, (*alfabetItr)));
+			}
 		}
 	}
 
-}
+	printPartition(partition);
 
+}
 
 
 int main() {
@@ -607,6 +661,7 @@ int main() {
 		std::cout << (*itr) << ' ';
 	std::cout << std::endl; 
 	nfa = postfixToNFA(postfix);
+	nfa.printNFA();
 	//epsilonClosure(nfa, nfa.start);
 	dfa =  NFAtoDFA(nfa, alfabet);
 	minimizeDFA(dfa, alfabet);
