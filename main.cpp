@@ -292,9 +292,9 @@ DFAState *createDFAState(int state_, std::set<int> fromStates, bool isFinal_) {
 	return newState;
 }
 
-void printDFAState(DFAState *state) {
-	std::cout << "state " << state->state << " is final? " << (state->isFinal == true) << std::endl;
-	std::cout << "from NFA states: ";
+void printDFAState(DFAState *state, bool isStart) {
+	std::cout << "state " << state->state << " is start? " << isStart << " is final? " << (state->isFinal == true) << std::endl;
+	std::cout << "from states: ";
 	for (std::set<int>::iterator itr = state->fromNFAstates.begin(); itr != state->fromNFAstates.end(); ++itr) {
 		std::cout << (*itr) << " ";
 	}
@@ -326,9 +326,9 @@ public:
 		if (isFinal) end = newState;
 	}
 	void printDFA() {
-		std::cout << "DFA: ";
+		printf("DFA: ");
 		for (std::map<int, DFAState*>::iterator itr = states.begin(); itr != states.end(); ++itr) {
-			printDFAState((*itr).second);
+			printDFAState((*itr).second, this->start->state == itr->first);
 		}
 	}
 
@@ -401,7 +401,7 @@ DFA NFAtoDFA(NFA nfa, std::set<char> alfabet) {
 		std::set<int> currentState = stateQueue.front().second;
 		int nState = stateQueue.front().first;
 		bool isFinal_ = isFinal(nfa, stateQueue.front().second);
-		dfa.addDFAState(createDFAState(stateQueue.front().first, stateQueue.front().second, isFinal_), nState == 0, isFinal_);
+		dfa.addDFAState(createDFAState(stateQueue.front().first, stateQueue.front().second, isFinal_), nState == 1, isFinal_);
 
 		// for each letter in the alfabet
 		for (std::set<char>::iterator alfabetItr = alfabet.begin(); alfabetItr != alfabet.end(); ++alfabetItr) {
@@ -461,11 +461,13 @@ void printIntSet(std::set<int> &set) {
 	printf("\n");
 }
 
-void printIntVector(std::vector<int> &vector) {
+int printIntVector(std::vector<int> &vector) {
+	int len = 0;
 	for (std::vector<int>::iterator itr = vector.begin(); itr != vector.end(); ++itr) {
 		printf("%d ", (*itr));
+		len += std::to_string(*itr).length() + 1;
 	}
-	//printf("\n");
+	return len;
 }
 
 void printPartition(std::vector<std::vector<int> > &partition) {
@@ -510,21 +512,42 @@ int findMax(std::set<char> &alfabet) {
     return max; 
 } 
 
-void printTable(std::vector<std::vector<std::vector<int> > > &transitionsTable, std::set<char> &alfabet, int numberOfStates) {
+void printTable(std::vector<std::vector<std::vector<int> > > &transitionsTable, std::set<char> &alfabet, DFA &dfa) {
 	
+	int width = dfa.states.size() * 2;
+	int maxStateLen = std::to_string(dfa.states.size()).length();
+	printf("%*c", maxStateLen + 2, '|');
 	for (std::set<char>::iterator itr = alfabet.begin(); itr != alfabet.end(); ++itr) {
-		printf("   %c       ", (*itr));
+		printf("%-*c|", width, *itr);
 	}
 	
 	printf("\n");
-	for (int i = 0; i < numberOfStates + 1; i++) {
-		printf("%d  ", i);
+	for (std::map<int, DFAState*>::iterator stateItr = dfa.states.begin(); stateItr != dfa.states.end(); ++stateItr) {
+		printf("%-*d|", maxStateLen + 1, stateItr->first);
 		for (std::set<char>::iterator itr = alfabet.begin(); itr != alfabet.end(); ++itr) {
-			printIntVector(transitionsTable[i][(*itr)]);
-			printf("___  ");
+			int len = printIntVector(transitionsTable[stateItr->first][(*itr)]);
+			printf("%*c", width - len + 1, '|');
 		}
 		printf("\n");
 	}
+}
+
+void makeTransitionsTable(DFA &dfa, std::set<char> &alfabet) {
+	int numberOfStates = dfa.states.size();
+	int maxLetterCode = findMax(alfabet); 
+	std::vector<std::vector<std::vector<int> > > transitionsTable(numberOfStates+1, 
+		std::vector<std::vector<int> >(maxLetterCode+1, std::vector<int>(0)));
+	// просмотриваем каждое состояние автомата
+	for (std::map<int, DFAState*>::iterator stateItr = dfa.states.begin(); stateItr != dfa.states.end(); ++stateItr) {
+		//и каждую букву алфавита (из каждого состояния есть переход по каждой букве)
+		for (std::set<char>::iterator alfabetItr = alfabet.begin(); alfabetItr != alfabet.end(); ++alfabetItr) {
+			// добавляем элемент таблицы по индексу [номер состояния, откуда переход][буква] 
+			// куда переход
+			transitionsTable[stateItr->first][(*alfabetItr)].push_back(stateItr->second->transitions[(*alfabetItr)]);
+		}
+	}
+	printf("Transitions table\n");
+	printTable(transitionsTable, alfabet, dfa);
 }
 
 void makeBackTransitionsTable(DFA &dfa, std::vector<std::vector<std::vector<int> > > &transitionsTable, std::set<char> &alfabet) {
@@ -549,43 +572,65 @@ bool hasAllTransitions(DFA &dfa, int alfabetPower) {
 	return statesPower * alfabetPower == transitionsPower;
 }
 
-void minimizeDFA(DFA &dfa, std::set<char> alfabet) {
-	int numberOfStates = dfa.states.size();
+DFA buildMinDFA(DFA &dfa, std::set<char> &alfabet, int numberOfStates, std::vector<std::vector<int> > &partition, 
+	std::vector<int> &classAttachment) {
+	DFA minDFA;
+	int partitionPower = partition.size();
+
+	for (int i = 0; i < partitionPower; i++) {
+		std::set<int> fromStates;
+		bool isFinal = false, isStart = false;
+		std::map<char, int> transitions;
+		DFAState *newState;
+		for (int m = 0; m < partition[i].size(); m++) {
+			fromStates.insert(partition[i][m]);
+			isFinal = isFinal || dfa.states[partition[i][m]]->isFinal;
+			isStart = isStart || (dfa.start->state == dfa.states[partition[i][m]]->state);
+			for (std::set<char>::iterator itr = alfabet.begin(); itr != alfabet.end(); ++itr) {
+				transitions[(*itr)] = classAttachment[dfa.states[partition[i][m]]->transitions[(*itr)]];
+			}
+
+		}
+		newState = createDFAState(i, fromStates, isFinal);
+		newState->transitions = transitions;
+		minDFA.addDFAState(newState, isStart, isFinal);
+	}
+	return minDFA;
+}
+
+void makePartition(DFA &dfa, std::set<char> &alfabet, int numberOfStates, 
+	std::vector<std::vector<int> > &partition, std::vector<int> &classAttachment) {
 	int maxLetterCode = findMax(alfabet);
+
 	printf("\n");
-	std::vector<std::vector<int> > partition; // разбиение
 	std::vector<std::pair<int, char> > queue; // очередь
 	std::vector<std::vector<std::vector<int> > > transitionsTable(numberOfStates+1, 
 		std::vector<std::vector<int> >(maxLetterCode+1, std::vector<int>(0)));
-	std::vector<int> classAttachment(numberOfStates); // classAttachment[i] - какому классу разбиения принадлежит состояние i
 	std::map<int, std::vector<int> > classConsistency; // какому номеру класса какие состояния соответствуют
-	// добавляем состояние, в которое ведут ребра из всех вершин по всем символам
-	// если количество переходов != количество состояний * мощность алфавита
-	if (not(hasAllTransitions(dfa, alfabet.size()))) {
-		addDeadState(dfa, alfabet);
-		dfa.printDFA();
-	}
 
 	// начальное разбиение: допускающие и недопускающие состояния, заполнение вектора classAttachment
 	initialPartition(dfa, partition, classAttachment);
 	printPartition(partition);
 
 	// заполняем очередь парами: класс, буква алфавита
-	for (int i = 0; i < 2; i++) {
+	for (int i = 0; i < partition.size(); i++) {
 		for (std::set<char>::iterator alfabetItr = alfabet.begin(); alfabetItr != alfabet.end(); 
 			++alfabetItr) {
 			queue.push_back(std::make_pair(i, (*alfabetItr)));
 		}
 	}
+	printQueue(queue);
 
 	// заполняем обратную таблицу переходов
 	makeBackTransitionsTable(dfa, transitionsTable, alfabet);
-	printTable(transitionsTable, alfabet, numberOfStates);
+	printf("Back trasitions table\n");
+	printTable(transitionsTable, alfabet, dfa);
 
 	while (not(queue.empty())) {
 		std::pair<int, char> splitter = queue.front();
 		std::vector<int> splitterClass = partition[splitter.first];
 		char splitterLetter = splitter.second;
+		std::map<int, DFAState*> dfaStates = dfa.states;
 
 		classConsistency.clear();
 		queue.erase(queue.begin());
@@ -601,7 +646,7 @@ void minimizeDFA(DFA &dfa, std::set<char> alfabet) {
 				if (classConsistency.find(fromClass) == classConsistency.end()) {
 					std::vector<int> v;
 					classConsistency[fromClass] = v;
-				}		
+				}
 				classConsistency[fromClass].push_back(transitionsTable[splitterClass[i]][splitterLetter][r]);
 			}
 		}
@@ -636,11 +681,37 @@ void minimizeDFA(DFA &dfa, std::set<char> alfabet) {
 			}
 		}
 	}
+	printf("7\n");
+	
+	// если образовалось пустое состояние, удаляяем его
+	for (std::vector<std::vector<int> >::iterator itr = partition.begin(); itr != partition.end(); ++itr) {
+		if (itr->empty()) {
+			partition.erase(itr);
+		}
+	}
 
 	printPartition(partition);
-
 }
 
+DFA minimizeDFA(DFA &dfa, std::set<char> &alfabet) {
+	std::vector<std::vector<int> > partition; // разбиение
+
+	// добавляем состояние, в которое ведут ребра из всех вершин по всем символам
+	// если количество переходов != количество состояний * мощность алфавита
+	if (not(hasAllTransitions(dfa, alfabet.size()))) {
+		addDeadState(dfa, alfabet);
+		dfa.printDFA();
+	}
+	int numberOfStates = dfa.states.size();
+	std::vector<int> classAttachment(numberOfStates); // classAttachment[i] - какому классу разбиения принадлежит состояние i
+	makePartition(dfa, alfabet, numberOfStates, partition, classAttachment);
+
+	DFA minimizedDFA = buildMinDFA(dfa, alfabet, numberOfStates, partition, classAttachment);
+	printf("minimal ");
+	minimizedDFA.printDFA();
+	makeTransitionsTable(minimizedDFA, alfabet);
+	return minimizedDFA;
+}
 
 int main() {
 	std::string regex;
@@ -664,7 +735,7 @@ int main() {
 	nfa.printNFA();
 	//epsilonClosure(nfa, nfa.start);
 	dfa =  NFAtoDFA(nfa, alfabet);
-	minimizeDFA(dfa, alfabet);
+	DFA minDFA = minimizeDFA(dfa, alfabet);
 }
 
 
