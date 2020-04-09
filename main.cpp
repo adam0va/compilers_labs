@@ -543,6 +543,10 @@ void printTable(std::vector<std::vector<std::vector<int> > > &transitionsTable, 
 			int len = printIntVector(transitionsTable[stateItr->first][(*itr)]);
 			printf("%*c", width - len + 1, '|');
 		}
+		if (stateItr->first == dfa.start->state)
+			printf("S ");
+		if (stateItr->second->isFinal)
+			printf("F ");
 		printf("\n");
 	}
 }
@@ -561,6 +565,7 @@ void makeTransitionsTable(DFA &dfa, std::set<char> &alfabet) {
 			transitionsTable[stateItr->first][(*alfabetItr)].push_back(stateItr->second->transitions[(*alfabetItr)]);
 		}
 	}
+
 	printf("Transitions table\n");
 	printTable(transitionsTable, alfabet, dfa);
 }
