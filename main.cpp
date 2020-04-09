@@ -167,6 +167,28 @@ public:
 			std::cout << "---------------" << std::endl;
 		}
 	}
+/*
+	void makeTransitionsTable(std::set<char> &alfabet) {
+		int numberOfStates = this.states.size();
+		int maxLetterCode = findMax(alfabet); 
+		std::vector<std::vector<std::vector<int> > > transitionsTable(numberOfStates+1, 
+			std::vector<std::vector<int> >(maxLetterCode+1, std::vector<int>(0)));
+
+
+		// просмотриваем каждое состояние автомата
+		for (std::map<int, state*>::iterator stateItr = this.states.begin(); stateItr != this.states.end(); ++stateItr) {
+			//и каждую букву алфавита (из каждого состояния есть переход по каждой букве)
+			for (std::set<char>::iterator alfabetItr = alfabet.begin(); alfabetItr != alfabet.end(); ++alfabetItr) {
+				// добавляем элемент таблицы по индексу [номер состояния, откуда переход][буква] 
+				// куда переход
+				//transitionsTable[stateItr->first][(*alfabetItr)].push_back(stateItr->second->transitions[(*alfabetItr)]);
+			}
+		}
+		printf("Transitions table\n");
+		printTable(transitionsTable, alfabet, dfa);
+
+
+	}*/
 };
 
 NFA postfixToNFA(std::string &postfix) {
@@ -435,7 +457,7 @@ DFA NFAtoDFA(NFA nfa, std::set<char> alfabet) {
 		}
 		stateQueue.erase(stateQueue.begin());
 	}
-	dfa.printDFA();
+	//dfa.printDFA();
 	return dfa;
 }
 
@@ -452,13 +474,6 @@ void addDeadState(DFA &dfa, std::set<char> &alfabet) { // add dead state where n
 		}
 	}
 	dfa.addDFAState(deadState, false, false);	
-}
-
-void printIntSet(std::set<int> &set) {
-	for (std::set<int>::iterator itr = set.begin(); itr != set.end(); ++itr) {
-		printf("%d ", (*itr));
-	}
-	printf("\n");
 }
 
 int printIntVector(std::vector<int> &vector) {
@@ -514,7 +529,7 @@ int findMax(std::set<char> &alfabet) {
 
 void printTable(std::vector<std::vector<std::vector<int> > > &transitionsTable, std::set<char> &alfabet, DFA &dfa) {
 	
-	int width = dfa.states.size() * 2;
+	int width = dfa.states.size() * 1.3;
 	int maxStateLen = std::to_string(dfa.states.size()).length();
 	printf("%*c", maxStateLen + 2, '|');
 	for (std::set<char>::iterator itr = alfabet.begin(); itr != alfabet.end(); ++itr) {
@@ -610,7 +625,7 @@ void makePartition(DFA &dfa, std::set<char> &alfabet, int numberOfStates,
 
 	// начальное разбиение: допускающие и недопускающие состояния, заполнение вектора classAttachment
 	initialPartition(dfa, partition, classAttachment);
-	printPartition(partition);
+	//printPartition(partition);
 
 	// заполняем очередь парами: класс, буква алфавита
 	for (int i = 0; i < partition.size(); i++) {
@@ -619,12 +634,12 @@ void makePartition(DFA &dfa, std::set<char> &alfabet, int numberOfStates,
 			queue.push_back(std::make_pair(i, (*alfabetItr)));
 		}
 	}
-	printQueue(queue);
+	//printQueue(queue);
 
 	// заполняем обратную таблицу переходов
 	makeBackTransitionsTable(dfa, transitionsTable, alfabet);
-	printf("Back trasitions table\n");
-	printTable(transitionsTable, alfabet, dfa);
+	/*printf("Back trasitions table\n");
+	printTable(transitionsTable, alfabet, dfa);*/
 
 	while (not(queue.empty())) {
 		std::pair<int, char> splitter = queue.front();
@@ -681,7 +696,6 @@ void makePartition(DFA &dfa, std::set<char> &alfabet, int numberOfStates,
 			}
 		}
 	}
-	printf("7\n");
 	
 	// если образовалось пустое состояние, удаляяем его
 	for (std::vector<std::vector<int> >::iterator itr = partition.begin(); itr != partition.end(); ++itr) {
@@ -690,7 +704,7 @@ void makePartition(DFA &dfa, std::set<char> &alfabet, int numberOfStates,
 		}
 	}
 
-	printPartition(partition);
+	//printPartition(partition);
 }
 
 DFA minimizeDFA(DFA &dfa, std::set<char> &alfabet) {
@@ -707,24 +721,40 @@ DFA minimizeDFA(DFA &dfa, std::set<char> &alfabet) {
 	makePartition(dfa, alfabet, numberOfStates, partition, classAttachment);
 
 	DFA minimizedDFA = buildMinDFA(dfa, alfabet, numberOfStates, partition, classAttachment);
-	printf("minimal ");
-	minimizedDFA.printDFA();
+	printf("min DFA ");
+	//minimizedDFA.printDFA();
 	makeTransitionsTable(minimizedDFA, alfabet);
 	return minimizedDFA;
 }
 
+// STEP 6: string recognition
+
+bool stringMatchesDFA(std::string word, DFA dfa) {
+	int wordLength = word.size();
+	DFAState *currentState = dfa.start;
+	std::cout << "-" << currentState->state << "-> ";
+	for (int i = 0; i < wordLength; i++) {
+		char c = word[i];
+		currentState = dfa.states[currentState->transitions[c]];
+		std::cout << word.substr(i, wordLength) << " -" << currentState->state << "-> ";
+	}
+	std::cout << std::endl;
+	return currentState->isFinal;
+}
+
 int main() {
-	std::string regex;
-	std::string postfix;
+	std::string regex, procRegex;
+	std::string postfix, word;
 	std::set<char> alfabet;
 	NFA nfa;
 	DFA dfa;
 
 	std::cout << "Enter your regex in infix form: ";
 	std::cin >> regex;
-	addConcatSymbol(regex);
-	std::cout << "Postfix form of your regex: " << regex << std::endl;
-	postfix = makePostfixForm(regex, alfabet);
+	procRegex = regex;
+	addConcatSymbol(procRegex);
+	std::cout << "Postfix form of your regex: " << procRegex << std::endl;
+	postfix = makePostfixForm(procRegex, alfabet);
 	std::cout << postfix << std::endl;
 	std::set<char>::iterator itr;
 	std::cout << "alfabet: "; 
@@ -733,9 +763,14 @@ int main() {
 	std::cout << std::endl; 
 	nfa = postfixToNFA(postfix);
 	nfa.printNFA();
-	//epsilonClosure(nfa, nfa.start);
 	dfa =  NFAtoDFA(nfa, alfabet);
+	makeTransitionsTable(dfa, alfabet);
 	DFA minDFA = minimizeDFA(dfa, alfabet);
+	std::cout << "\nYour regex is: " << regex; 
+	std::cout << "\nEnter the word to check if it matches your regular expression: ";
+	std::cin >> word;
+	std::cout << (stringMatchesDFA(word, minDFA) ? "Given word matches your regular expression\n" : 
+		"Given word doesn't match your regular expression\n");
 }
 
 
