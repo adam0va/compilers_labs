@@ -759,7 +759,7 @@ int main() {
 	nfa = postfixToNFA(postfix);
 	nfa.printNFA();
 	dfa =  NFAtoDFA(nfa, alfabet);
-	dfa.printDFA();
+	//dfa.printDFA();
 	//printf("qwerty\n");
 	//makeTransitionsTable(dfa, alfabet);
 	DFA minDFA = minimizeDFA(dfa, alfabet);
