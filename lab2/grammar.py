@@ -2,14 +2,14 @@ import json
 import re
 
 class Grammar:
-	def __init__(self, startNonTerminal_, terminals_, nonTerminals_, rules_):
+	def __init__(self, startNonTerminal_, terminals_: str, nonTerminals_: str, rules_):
 		self.startNonTerminal = startNonTerminal_
 		self.terminals = terminals_
 		self.nonTerminals = nonTerminals_
 		self.rules = rules_
 
 	def print_grammar(self):
-		print(f'nonterminals: {self.nonTerminals}\nterminals: {self.terminals}\nstart nonterminal: {self.startNonTerminal}\n')
+		print(f'nonterminals: {self.nonTerminals}\nterminals: {self.terminals}\nstart nonterminal: {self.startNonTerminal}')
 		print(f'rules: {json.dumps(self.rules,indent=4)}\n')
 
 	def read_grammar_from_file(filename: str):
@@ -25,13 +25,13 @@ class Grammar:
 				if "e" in alt:
 					eps_nonterms.append(key)
 
-					#[eps_terms]+
 		while 1:
 			new_nonterms = []
 			# составляем регулярное выражение из найденных эпсилон-нетерминалов
 			eps_nonterms_regex = '[' + ''.join(x for x in eps_nonterms) + ']+'
 			regex = re.compile(eps_nonterms_regex)
-			print(f'epsilon-nonterms regex: {eps_nonterms_regex}')
+			#print(f'epsilon-nonterms regex: {eps_nonterms_regex}')
+			
 			# в каждом правиле проверям
 			for key, value in self.rules.items():
 				if not(key in eps_nonterms):
@@ -39,7 +39,7 @@ class Grammar:
 					# то добавляем в множество новый нетерминал
 					for alt in value:
 						alt_string = ''.join(x for x in alt)
-						print(f'string to check: {alt_string}')
+						#print(f'string to check: {alt_string}')
 						match_res = regex.fullmatch(alt_string)
 						if match_res:
 							eps_nonterms += key
@@ -52,6 +52,8 @@ class Grammar:
 		return eps_nonterms
 
 	def delete_epsilon_rules(self):
+		if 'e' not in self.terminals:
+			return
 		eps_nonterms = self.find_eps_nonterms()			
 		rules_ = self.rules
 		# 1) 	удаляем эпсилон-правила
@@ -73,14 +75,73 @@ class Grammar:
 
 		# если из начального нетерминала выводится эпсилон,
 		# добавляем новое начальное правило
+		#print(f'eps_nonterms: {eps_nonterms}')
 		if self.startNonTerminal in eps_nonterms:
 			rules_["S_"] = [self.startNonTerminal] + ["e"]
 			self.startNonTerminal = "S_"
-		self.print_grammar()
+		self.rules = rules_
+
+	def __handle_direct_left_recursive_rule(self, nonterm_from: str, nonterm_to: str):
+		left_rec_alt =[]
+		other_alt = []
+		for alt in self.rules[nonterm_from]:
+			if alt[0] == nonterm_to:
+				left_rec_alt += [alt]
+			else:
+				other_alt += [alt]
+		if left_rec_alt == []:
+			return
+		new_rule_for_nonterm = []
+		new_nonterm = nonterm_from + "_"
+		self.nonTerminals.append(new_nonterm)
+		for alt in other_alt:
+			if alt == ["e"]:
+				alt = [new_nonterm]
+			else:
+				alt.append(new_nonterm)
+		self.rules[nonterm_from] = other_alt
+		rule_for_new_nonterm = []
+		for alt in left_rec_alt:
+			alt = alt[1:]
+			alt.append(new_nonterm)
+			rule_for_new_nonterm.append(alt)
+		rule_for_new_nonterm.append(["e"])
+		self.rules[new_nonterm] = rule_for_new_nonterm
+
+		
+
+	def __handle_common_left_recursive_rule(self, nonterm_from: str, nonterm_to: str):
+		new_rule = []
+		numbers_of_found_alts = []
+		found_alts = []
+
+		for alt_number in range(len(self.rules[nonterm_from])):
+			if self.rules[nonterm_from][alt_number][0] == nonterm_to:
+				found_alts.append(self.rules[nonterm_from][alt_number])
+				numbers_of_found_alts.append(alt_number)
+		if found_alts == []:
+			return
+		# удаляем найденные альтернативы
+		for number in numbers_of_found_alts[::-1]:
+			del self.rules[nonterm_from][number]
+		insert_from = self.rules[nonterm_to]
+		# заменяем их на новые
+		for alt in found_alts:
+			for to_insert in insert_from:
+				if to_insert == ["e"]:
+					new_alt = alt[1:]
+				else:
+					new_alt = to_insert + alt[1:]
+				self.rules[nonterm_from].append(new_alt)
 
 
-
-
+	def delete_left_recursion(self):
+		for i in range(0, len(self.nonTerminals)):
+			for j in range(0, i+1):
+				if self.nonTerminals[i] == self.nonTerminals[j]:
+					self.__handle_direct_left_recursive_rule(self.nonTerminals[i], self.nonTerminals[j])
+				else:
+					self.__handle_common_left_recursive_rule(self.nonTerminals[i], self.nonTerminals[j])
 
 
 

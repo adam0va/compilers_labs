@@ -1,0 +1,19 @@
+{
+  "terminals": [
+    "a",
+    "b"
+  ],
+  "nonTerminals": [
+    "A",
+    "B",
+    "C"
+  ],
+  "startNonTerminal": "A",
+
+  "rules": {
+    "A": [["B", "C"], ["a"]],
+    "B": [["C", "A"], ["A", "b"]],
+    "C": [["A", "B"], ["C", "C"], ["a"]]
+  }
+
+}
