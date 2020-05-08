@@ -106,6 +106,8 @@ class Grammar:
 			alt.append(new_nonterm)
 			rule_for_new_nonterm.append(alt)
 		rule_for_new_nonterm.append(["e"])
+		if "e" not in self.terminals:
+			self.terminals.append("e")
 		self.rules[new_nonterm] = rule_for_new_nonterm
 
 		
@@ -142,6 +144,42 @@ class Grammar:
 					self.__handle_direct_left_recursive_rule(self.nonTerminals[i], self.nonTerminals[j])
 				else:
 					self.__handle_common_left_recursive_rule(self.nonTerminals[i], self.nonTerminals[j])
+
+	def __find_productive_symbols(self):
+		productive_symbols = []
+		terminals_regex = '[' + ''.join(x for x in self.terminals) + ']+'
+		print(terminals_regex)
+		regex = re.compile(terminals_regex)
+
+		# match_res = regex.fullmatch(alt_string)
+
+		for key, value in self.rules.items():
+			for alternative in value:
+				alt_string = ''.join(x for x in alternative)
+				isProductive = regex.fullmatch(alt_string)
+				if isProductive:
+					productive_symbols.append(key)
+
+		for i in range(20): 
+			new_symbols = []
+			for key, value in self.rules.items():
+				if key not in productive_symbols:
+					for alternative in value:
+						isProductive = True
+						for symbol in alternative:
+							if symbol not in productive_symbols and symbol not in self.terminals:
+								isProductive = False
+						if isProductive:
+							if key not in productive_symbols:
+								productive_symbols.append(key)
+								new_symbols.append(key)
+			if new_symbols == []:
+				break
+
+		print(productive_symbols)
+
+	def delete_useless_symbols(self):
+		self.__find_productive_symbols()
 
 
 
