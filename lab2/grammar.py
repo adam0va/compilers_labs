@@ -18,6 +18,16 @@ class Grammar:
 			return Grammar(startNonTerminal_ = jsonGrammar['startNonTerminal'], terminals_ = jsonGrammar['terminals'],
 				nonTerminals_ = jsonGrammar['nonTerminals'], rules_ = jsonGrammar['rules'])
 
+	def write_grammar_to_file(self, filename: str):
+		json_result = {}
+		json_result['startNonTerminal'] = self.startNonTerminal
+		json_result['terminals'] = self.terminals
+		json_result['nonTerminals'] = self.nonTerminals
+		json_result['rules'] = self.rules
+		filename = 'result_' + filename
+		with open(filename, 'w') as outfile:
+			json.dump(json_result, outfile, indent=4)
+
 	def find_eps_nonterms(self):
 		eps_nonterms = []
 		for key, value in self.rules.items():
