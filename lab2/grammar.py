@@ -174,10 +174,46 @@ class Grammar:
 			if new_symbols == []:
 				break
 
-		print(productive_symbols)
+		return productive_symbols
+
+	def __find_reachable_symbols(self):
+		reachable_symbols = [self.startNonTerminal]
+
+		for alternative in self.rules[self.startNonTerminal]:
+			for symbol in alternative:
+				if symbol in self.nonTerminals:
+					reachable_symbols.append(symbol)
+		print(f'first reachable symbols: {reachable_symbols}')
+
+		for i in range(20):
+			new_symbols = []
+			for key, value in self.rules.items():
+				if key in reachable_symbols:
+					for alternative in value:
+						for symbol in alternative:
+							if symbol in self.nonTerminals and symbol not in reachable_symbols:
+								new_symbols.append(symbol)
+			if new_symbols == []:
+				break
+			print(new_symbols)
+			reachable_symbols += new_symbols
+
+		return reachable_symbols
 
 	def delete_useless_symbols(self):
-		self.__find_productive_symbols()
+		productive_symbols = self.__find_productive_symbols()
+		nonproductive_symbols = []
+		for x in self.nonTerminals:
+			if x not in productive_symbols:
+				nonproductive_symbols += x
+		print(f'productive_symbols: {productive_symbols}\nnonproductive_symbols: {nonproductive_symbols}')
+
+		reachable_symbols = self.__find_reachable_symbols()
+		nonreachable_symbols = []
+		for x in self.nonTerminals:
+			if x not in reachable_symbols:
+				nonreachable_symbols += x
+		print(f'reachable_symbols: {reachable_symbols}\nnonreachable_symbols: {nonreachable_symbols}')
 
 
 
