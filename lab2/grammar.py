@@ -77,8 +77,12 @@ class Grammar:
 		# добавляем новое начальное правило
 		#print(f'eps_nonterms: {eps_nonterms}')
 		if self.startNonTerminal in eps_nonterms:
-			rules_["S_"] = [self.startNonTerminal] + ["e"]
-			self.startNonTerminal = "S_"
+			new_rule = []
+			new_rule.append([self.startNonTerminal])
+			new_rule.append(["e"])
+			new_start_nonterm = self.startNonTerminal + "_"
+			rules_[new_start_nonterm] = new_rule
+			self.startNonTerminal = new_start_nonterm
 		self.rules = rules_
 
 	def __handle_direct_left_recursive_rule(self, nonterm_from: str, nonterm_to: str):
@@ -148,7 +152,7 @@ class Grammar:
 	def __find_productive_symbols(self):
 		productive_symbols = []
 		terminals_regex = '[' + ''.join(x for x in self.terminals) + ']+'
-		print(terminals_regex)
+		#print(terminals_regex)
 		regex = re.compile(terminals_regex)
 
 		for key, value in self.rules.items():
@@ -176,6 +180,15 @@ class Grammar:
 
 		return productive_symbols
 
+	def __delete_useless_symbols(self, useless_symbols):
+		for symbol in useless_symbols:
+			self.rules.pop(symbol, None)
+		for key, value in self.rules.items():
+			for alt in value:
+				if set(alt) & set(useless_symbols):
+					self.rules[key].remove(alt)
+		#print(self.rules)
+
 	def __find_reachable_symbols(self):
 		reachable_symbols = [self.startNonTerminal]
 
@@ -183,9 +196,9 @@ class Grammar:
 			for symbol in alternative:
 				if symbol in self.nonTerminals:
 					reachable_symbols.append(symbol)
-		print(f'first reachable symbols: {reachable_symbols}')
+		#print(f'first reachable symbols: {reachable_symbols}')
 
-		for i in range(20):
+		while 1:
 			new_symbols = []
 			for key, value in self.rules.items():
 				if key in reachable_symbols:
@@ -195,10 +208,11 @@ class Grammar:
 								new_symbols.append(symbol)
 			if new_symbols == []:
 				break
-			print(new_symbols)
 			reachable_symbols += new_symbols
 
 		return reachable_symbols
+
+	 
 
 	def delete_useless_symbols(self):
 		productive_symbols = self.__find_productive_symbols()
@@ -206,14 +220,18 @@ class Grammar:
 		for x in self.nonTerminals:
 			if x not in productive_symbols:
 				nonproductive_symbols += x
-		print(f'productive_symbols: {productive_symbols}\nnonproductive_symbols: {nonproductive_symbols}')
+		print(f'\nproductive_symbols: {productive_symbols}\nnonproductive_symbols: {nonproductive_symbols}')
+
+		self.__delete_useless_symbols(nonproductive_symbols)
 
 		reachable_symbols = self.__find_reachable_symbols()
 		nonreachable_symbols = []
 		for x in self.nonTerminals:
 			if x not in reachable_symbols:
 				nonreachable_symbols += x
-		print(f'reachable_symbols: {reachable_symbols}\nnonreachable_symbols: {nonreachable_symbols}')
+		print(f'\nreachable_symbols: {reachable_symbols}\nnonreachable_symbols: {nonreachable_symbols}\n')
+		self.__delete_useless_symbols(nonreachable_symbols)
+
 
 
 

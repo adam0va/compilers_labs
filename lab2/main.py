@@ -1,11 +1,13 @@
 from grammar import Grammar
 
 '''
-test.json - нахождение эпсилон правил
-test2.json - находение эпсилон правил
-test_delete_recursion.json - удаление произвольной левой рекурсии
-test_productive_symbols.json - нахождение порождающих терминалов (здесь D непорождающий)
-test_delete_useless.json
+test_delete_recursion1.json - нахождение эпсилон правил
+test_delete_recursion2.json - находение эпсилон правил
+test_delete_recursion3.json - удаление произвольной левой рекурсии
+test_delete_recursion4.json
+test_useless_symbols1.json - нахождение бесполезных терминалов (здесь D непорождающий, С недостижимый)
+test_useless_symbols2.json - нахождение бесполезных символовов (остается только одно правило)
+test_useless_symbols3.json - всё остается, как было
 '''
 
 
@@ -22,7 +24,10 @@ if __name__ == "__main__":
 	print(f'\nGrammar without left recursion:')
 	grammar1.print_grammar()
 
-	grammar2 = Grammar.read_grammar_from_file('test_productive_symbols.json')
+	grammar2 = Grammar.read_grammar_from_file('test_useless_symbols3.json')
 	print(f'\n\n\n----------------------\nYour grammar:')
 	grammar2.print_grammar()
+	print(f'Deleting useless symbols...')
 	grammar2.delete_useless_symbols()
+	print(f'Grammar without useless symbols:')
+	grammar2.print_grammar()
