@@ -151,8 +151,6 @@ class Grammar:
 		print(terminals_regex)
 		regex = re.compile(terminals_regex)
 
-		# match_res = regex.fullmatch(alt_string)
-
 		for key, value in self.rules.items():
 			for alternative in value:
 				alt_string = ''.join(x for x in alternative)
@@ -160,7 +158,7 @@ class Grammar:
 				if isProductive:
 					productive_symbols.append(key)
 
-		for i in range(20): 
+		while 1: 
 			new_symbols = []
 			for key, value in self.rules.items():
 				if key not in productive_symbols:
