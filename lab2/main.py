@@ -12,7 +12,7 @@ test_useless_symbols3.json - всё остается, как было
 
 
 if __name__ == "__main__":
-	testfile1 = 'test_delete_recursion2.json'
+	testfile1 = 'test_delete_recursion1.json'
 	grammar1 = Grammar.read_grammar_from_file(testfile1)
 	print(f'Your grammar:')
 	grammar1.print_grammar()
@@ -26,7 +26,7 @@ if __name__ == "__main__":
 	grammar1.print_grammar()
 	grammar1.write_grammar_to_file(testfile1)
 
-	testfile2 = 'test_useless_symbols3.json'
+	testfile2 = 'test_useless_symbols1.json'
 	grammar2 = Grammar.read_grammar_from_file(testfile2)
 	print(f'\n\n\n----------------------\nYour grammar:')
 	grammar2.print_grammar()
