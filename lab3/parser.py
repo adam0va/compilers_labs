@@ -18,8 +18,8 @@ class Parser:
 		self.number_of_current_lexem = 0
 		self.length_of_list = len(self.lexems)
 		self.current_lexem = self.lexems[self.number_of_current_lexem]
-		self.print_name_of_functions = False
-		self.print_lexem = False
+		self.print_name_of_functions = True
+		self.print_lexem = True
 
 	def read_program_from_file(filename: str):
 		with open(filename) as file:
@@ -101,6 +101,8 @@ class Parser:
 			if  self.current_lexem == '=':
 				self.next()
 				self.expression()
+			else:
+				raise ParserSyntaxError('= expected after identificator')
 		else:
 			raise ParserSyntaxError('Operator expected')
 
