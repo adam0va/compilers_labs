@@ -18,8 +18,8 @@ class Parser:
 		self.number_of_current_lexem = 0
 		self.length_of_list = len(self.lexems)
 		self.current_lexem = self.lexems[self.number_of_current_lexem]
-		self.print_name_of_functions = True
-		self.print_lexem = True
+		self.print_name_of_functions = False
+		self.print_lexem = False
 
 	def read_program_from_file(filename: str):
 		with open(filename) as file:
