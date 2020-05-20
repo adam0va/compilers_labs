@@ -64,7 +64,8 @@ class Grammar:
 	def delete_epsilon_rules(self):
 		if 'e' not in self.terminals:
 			return
-		eps_nonterms = self.find_eps_nonterms()			
+		eps_nonterms = self.find_eps_nonterms()
+		print(f'eps nonterms: {eps_nonterms}')		
 		rules_ = self.rules
 		# 1) 	удаляем эпсилон-правила
 		# 2)	для каждой альтернативы с эпсилон-нетерминалом добавить
@@ -131,8 +132,11 @@ class Grammar:
 		numbers_of_found_alts = []
 		found_alts = []
 
+		#print(f'nonterm_from: {nonterm_from}')
 		for alt_number in range(len(self.rules[nonterm_from])):
-			if self.rules[nonterm_from][alt_number][0] == nonterm_to:
+			#print(f'nonterm_to: {nonterm_to}\n {self.rules[nonterm_from][alt_number]} {self.rules[nonterm_from][alt_number][0]}')
+			if self.rules[nonterm_from][alt_number][0] in self.nonTerminals and self.rules[nonterm_from][alt_number][0] == nonterm_to:
+
 				found_alts.append(self.rules[nonterm_from][alt_number])
 				numbers_of_found_alts.append(alt_number)
 		if found_alts == []:
@@ -158,6 +162,8 @@ class Grammar:
 					self.__handle_direct_left_recursive_rule(self.nonTerminals[i], self.nonTerminals[j])
 				else:
 					self.__handle_common_left_recursive_rule(self.nonTerminals[i], self.nonTerminals[j])
+				#print(f'from: {self.nonTerminals[i]} to: {self.nonTerminals[j]}')
+				#self.print_grammar()
 
 	def __find_productive_symbols(self):
 		productive_symbols = []

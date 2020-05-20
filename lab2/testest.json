@@ -1,0 +1,22 @@
+{
+  "terminals": [
+    "d",
+    "e"
+  ],
+  "nonTerminals": [
+    "S",
+    "A",
+    "B",
+    "C",
+    "D"
+  ],
+  "startNonTerminal": "S",
+
+  "rules": {
+    "S": [["A", "B", "C"], ["D", "S"]],
+    "A": [["e"]],
+    "B": [["A", "C"]],
+    "C": [["e"]],
+    "D": [["d"]]
+  }
+}

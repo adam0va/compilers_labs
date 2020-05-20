@@ -10,7 +10,7 @@ test_assignment_expected.txt
 '''
 
 if __name__ == "__main__":
-	filename = 'test_assignment_expected.txt'
+	filename = 'correct_program.txt'
 	parser = Parser.read_program_from_file(filename)
 	parser.print_lexems()
 	parser.analyse()

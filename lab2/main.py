@@ -12,7 +12,8 @@ test_useless_symbols3.json - всё остается, как было
 
 
 if __name__ == "__main__":
-	testfile1 = 'test_delete_recursion1.json'
+	
+	testfile1 = '../lab3/grammar.json'
 	grammar1 = Grammar.read_grammar_from_file(testfile1)
 	print(f'Your grammar:')
 	grammar1.print_grammar()
@@ -20,6 +21,8 @@ if __name__ == "__main__":
 	grammar1.delete_epsilon_rules()
 	print(f'\nGrammar without epsilon rules:')
 	grammar1.print_grammar()
+	grammar1.write_grammar_to_file('grammar.json')
+	'''
 	print(f'Deleting left recursion...')
 	grammar1.delete_left_recursion()
 	print(f'\nGrammar without left recursion:')
@@ -35,3 +38,4 @@ if __name__ == "__main__":
 	print(f'Grammar without useless symbols:')
 	grammar2.print_grammar()
 	grammar2.write_grammar_to_file(testfile2)
+	'''
