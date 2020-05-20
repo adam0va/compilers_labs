@@ -13,8 +13,7 @@
     "-",
     "*",
     "/",
-    "const",
-    "id"
+    "const"
   ],
   "nonTerminals": [
     "EXPRESSION",
@@ -38,7 +37,7 @@
     "TERM": [   ["TERM", "*", "FACTOR"],
                 ["TERM", "/", "FACTOR"], 
                 ["FACTOR"]],
-    "FACTOR": [["id"], ["const"], ["(", "ARITHMETIC_EXPRESSION", ")"]]
+    "FACTOR": [["const"], ["(", "ARITHMETIC_EXPRESSION", ")"]]
   }
 
 }
