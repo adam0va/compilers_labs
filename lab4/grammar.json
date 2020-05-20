@@ -17,14 +17,12 @@
     "id"
   ],
   "nonTerminals": [
-    "IDENTIFICATOR",
     "EXPRESSION",
     "ARITHMETIC_EXPRESSION",
     "TERM",
-    "FACTOR",
-    "CONSTANT"
+    "FACTOR"
   ],
-  "startNonTerminal": "PROGRAM",
+  "startNonTerminal": "EXPRESSION",
 
   "rules": {
     "EXPRESSION": [ ["ARITHMETIC_EXPRESSION", "<", "ARITHMETIC_EXPRESSION"], 
@@ -40,9 +38,7 @@
     "TERM": [   ["TERM", "*", "FACTOR"],
                 ["TERM", "/", "FACTOR"], 
                 ["FACTOR"]],
-    "FACTOR": [["IDENTIFICATOR"], ["CONSTANT"], ["(", "ARITHMETIC_EXPRESSION", ")"]],
-    "CONSTANT": [["const"]],
-    "IDENTIFICATOR": [["id"]]
+    "FACTOR": [["id"], ["const"], ["(", "ARITHMETIC_EXPRESSION", ")"]]
   }
 
 }
