@@ -1,0 +1,48 @@
+{
+  "terminals": [
+    "e",
+    "(",
+    ")",
+    "<",
+    "<=",
+    "==",
+    "<>",
+    ">",
+    ">=",
+    "+",
+    "-",
+    "*",
+    "/",
+    "const",
+    "id"
+  ],
+  "nonTerminals": [
+    "IDENTIFICATOR",
+    "EXPRESSION",
+    "ARITHMETIC_EXPRESSION",
+    "TERM",
+    "FACTOR",
+    "CONSTANT"
+  ],
+  "startNonTerminal": "PROGRAM",
+
+  "rules": {
+    "EXPRESSION": [ ["ARITHMETIC_EXPRESSION", "<", "ARITHMETIC_EXPRESSION"], 
+                    ["ARITHMETIC_EXPRESSION", "<=", "ARITHMETIC_EXPRESSION"],
+                    ["ARITHMETIC_EXPRESSION", "==", "ARITHMETIC_EXPRESSION"],
+                    ["ARITHMETIC_EXPRESSION", "<>", "ARITHMETIC_EXPRESSION"],
+                    ["ARITHMETIC_EXPRESSION", ">", "ARITHMETIC_EXPRESSION"],
+                    ["ARITHMETIC_EXPRESSION", ">=", "ARITHMETIC_EXPRESSION"],
+                    ["ARITHMETIC_EXPRESSION"]],
+    "ARITHMETIC_EXPRESSION": [  ["ARITHMETIC_EXPRESSION", "+", "TERM"],
+                                ["ARITHMETIC_EXPRESSION", "-", "TERM"], 
+                                ["TERM"]],
+    "TERM": [   ["TERM", "*", "FACTOR"],
+                ["TERM", "/", "FACTOR"], 
+                ["FACTOR"]],
+    "FACTOR": [["IDENTIFICATOR"], ["CONSTANT"], ["(", "ARITHMETIC_EXPRESSION", ")"]],
+    "CONSTANT": [["const"]],
+    "IDENTIFICATOR": [["id"]]
+  }
+
+}
