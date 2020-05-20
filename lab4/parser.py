@@ -33,6 +33,10 @@ class Parser:
 	def print_symbols(self):
 		print(f'Symbols: {self.symbols}')
 
+	def symbol_to_rpn(self, c: str):
+		if c not in ('(', ')'):
+			self.rpn = self.rpn + c
+
 	def __get_precedence(self, a: str, b: str):
 		'''
 		e1 - operand is missed
@@ -48,39 +52,115 @@ class Parser:
 		a = self.stack[-1]
 		b = self.symbols[0]
 		'''
-		if (a == ')' or a in constant) and (b == '(' or b in constant):
-			raise ParserSyntaxError('Operator is missed')
-		elif (	a == ')' or a in constant or a in operation_of_multiplication) and \
-				(b in operation_of_multiplication or b in operation_of_addition or b is ')' or b is '$'):
-			return '>'
-		elif (a in operation_of_multiplication) and (b == '(' or b in constant):
-			return '<'
-		elif (a in operation_of_addition) and (b == '(' or b in constant or b in operation_of_multiplication):
-			return '<'
-		elif (a in operation_of_addition) and (b in operation_of_addition or b == ')' or b == '$'):
-			return '>'
-		elif (a == ')' or a == '$') and (b == '(' or b in constant or b in operation_of_multiplication or 
-			b in operation_of_addition):
-			return '<'
-		elif a == ')' and b == ')':
-			return '='
-		elif a == '(' and b == '$':
-			raise ParserSyntaxError('Right bracket is missed')
-		elif a == '$' and b == ')':
-			raise ParserSyntaxError('Right bracket is not balanced')
-		elif a == '$' and b == '$':
-			raise ParserSyntaxError('Operand is missed')
+		if a == ')': 
+			if b == '(' or b in constant:
+				raise ParserSyntaxError('Operator is missed')
+			if 	b in operation_of_multiplication or b in operation_of_addition or b ==')' or b == '$' \
+				or b in operation_of_relation:
+				return '>'
+
+		if a in constant: 
+			if b == '(' or b in constant:
+				raise ParserSyntaxError('Operator is missed')
+			if 	b in operation_of_multiplication or b in operation_of_addition or b ==')' or b == '$' \
+				or b in operation_of_relation:
+				return '>'
+
+		if a in operation_of_multiplication:
+			if b == '(' or b in constant:
+				return '<'
+			if 	b in operation_of_multiplication or b in operation_of_addition or b ==')' or b == '$':
+				return '>'
+			if b in operation_of_relation:
+				return '>'
+				raise ParserSyntaxError('1')
+
+		if a in operation_of_addition:
+			if b == '(' or b in constant or b in operation_of_multiplication:
+				return '<'
+			if 	b in operation_of_addition or b ==')' or b == '$':
+				return '>'
+			if b in operation_of_relation:
+				return '>'
+				raise ParserSyntaxError('2')
+
+		if a == '(':
+			if b == '(' or b in constant or b in operation_of_multiplication or b in operation_of_addition:
+				return '<'
+			if b == ')':
+				return '='
+			if b == '$':
+				raise ParserSyntaxError('Right bracket is missed')
+			if b in operation_of_relation:
+				return '>'
+				raise ParserSyntaxError('3')
+
+		if a == '$':
+			if b == '(' or b in constant or b in operation_of_multiplication or b in operation_of_addition:
+				return '<'
+			if b == ')':
+				raise ParserSyntaxError('Right bracket is not balanced')
+			if b in operation_of_relation:
+				return '<'
+				raise ParserSyntaxError('4')
+
+		if a in operation_of_relation:
+			if b == '(' or b in constant or b in operation_of_multiplication or b in operation_of_addition \
+			or b == ')':
+				return '<'
+			if b == '$':
+				return '>'
+			else:
+				raise ParserSyntaxError('5')
+
+
+		
+		# if (a == ')' or a in constant) and (b == '(' or b in constant):
+		# 	raise ParserSyntaxError('Operator is missed')
+		# elif (	a == ')' or a in constant or a in operation_of_multiplication) and \
+		# 		(b in operation_of_multiplication or b in operation_of_addition or b is ')' or b is '$'):
+		# 	return '>'
+		# elif (a in operation_of_multiplication) and (b == '(' or b in constant):
+		# 	return '<'
+		# elif (a in operation_of_addition) and (b == '(' or b in constant or b in operation_of_multiplication):
+		# 	return '<'
+		# elif (a in operation_of_addition) and (b in operation_of_addition or b == ')' or b == '$'):
+		# 	return '>'
+		# elif (a == '(' or a == '$') and (b == '(' or b in constant or b in operation_of_multiplication or 
+		# 	b in operation_of_addition):
+		# 	return '<'
+		# elif a == '(' and b == ')':
+		# 	return '='
+		# elif a == '(' and b == '$':
+		# 	raise ParserSyntaxError('Right bracket is missed')
+		# elif a == '$' and b == ')':
+		# 	raise ParserSyntaxError('Right bracket is not balanced')
+		#elif a == '$' and b == '$':
+		#	raise ParserSyntaxError('Operand is missed')
 
 
 	def analyze(self):
-		while 1:
-			precedence = self.__get_precedence()
+		if self.stack[-1] == '$' and self.symbols[0] == '$':
+			raise ParserSyntaxError('Operand is missed')
+		while 100:
+			if self.stack[-1] == '$' and self.symbols[0] == '$':
+				break
+			precedence = self.__get_precedence(self.stack[-1], self.symbols[0])
 			if precedence == '<' or precedence == '=':
-				self
 				self.stack.append(self.symbols[0])
-				self.symbols = symbols[1:]
+				self.symbols = self.symbols[1:]
 			elif precedence == '>':
 				while True:
+					pop_stack = self.stack[-1]
+					self.stack = self.stack[:-1]
+					self.symbol_to_rpn(pop_stack)
+					if self.__get_precedence(self.stack[-1], pop_stack) == '<':
+						break
+			print(f'stack: {self.stack}\nsymbols: {self.symbols}')
+
+		print(f'rpn: {self.rpn}')
+
+
 
 
 
