@@ -35,23 +35,14 @@ class Parser:
 
 	def symbol_to_rpn(self, c: str):
 		if c not in ('(', ')'):
-			self.rpn = self.rpn + c
+			self.rpn = self.rpn + c + ' '
 
 	def __get_precedence(self, a: str, b: str):
-		'''
-		e1 - operand is missed
-		e2 - right bracket is not balanced
-		e3 - operator is missed
-		e4 - right bracket is missed
-		'''
 		constant = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
 		operation_of_multiplication = ['*', '/']
 		operation_of_addition = ['+', '-']
 		operation_of_relation = ['<', '<=', '==', '<>', '>', '>=']
-		'''
-		a = self.stack[-1]
-		b = self.symbols[0]
-		'''
+	
 		if a == ')': 
 			if b == '(' or b in constant:
 				raise ParserSyntaxError('Operator is missed')
@@ -69,74 +60,41 @@ class Parser:
 		if a in operation_of_multiplication:
 			if b == '(' or b in constant:
 				return '<'
-			if 	b in operation_of_multiplication or b in operation_of_addition or b ==')' or b == '$':
+			if 	b in operation_of_multiplication or b in operation_of_addition or b ==')' or b == '$' \
+			or b in operation_of_relation:
 				return '>'
-			if b in operation_of_relation:
-				return '>'
-				raise ParserSyntaxError('1')
 
 		if a in operation_of_addition:
 			if b == '(' or b in constant or b in operation_of_multiplication:
 				return '<'
-			if 	b in operation_of_addition or b ==')' or b == '$':
+			if 	b in operation_of_addition or b ==')' or b == '$' or b in operation_of_relation:
 				return '>'
-			if b in operation_of_relation:
-				return '>'
-				raise ParserSyntaxError('2')
 
 		if a == '(':
-			if b == '(' or b in constant or b in operation_of_multiplication or b in operation_of_addition:
+			if b == '(' or b in constant or b in operation_of_multiplication or b in operation_of_addition \
+			or b in operation_of_relation:
 				return '<'
 			if b == ')':
 				return '='
 			if b == '$':
 				raise ParserSyntaxError('Right bracket is missed')
-			if b in operation_of_relation:
-				return '>'
-				raise ParserSyntaxError('3')
 
 		if a == '$':
-			if b == '(' or b in constant or b in operation_of_multiplication or b in operation_of_addition:
+			if b == '(' or b in constant or b in operation_of_multiplication or b in operation_of_addition \
+			or b in operation_of_relation:
 				return '<'
 			if b == ')':
 				raise ParserSyntaxError('Right bracket is not balanced')
-			if b in operation_of_relation:
-				return '<'
-				raise ParserSyntaxError('4')
+			if b == '$':
+				raise ParserSyntaxError('Operand is missed')
 
 		if a in operation_of_relation:
-			if b == '(' or b in constant or b in operation_of_multiplication or b in operation_of_addition \
-			or b == ')':
+			if b == '(' or b in constant or b in operation_of_multiplication or b in operation_of_addition:
 				return '<'
-			if b == '$':
+			if b == ')' or b == '$':
 				return '>'
-			else:
-				raise ParserSyntaxError('5')
-
-
-		
-		# if (a == ')' or a in constant) and (b == '(' or b in constant):
-		# 	raise ParserSyntaxError('Operator is missed')
-		# elif (	a == ')' or a in constant or a in operation_of_multiplication) and \
-		# 		(b in operation_of_multiplication or b in operation_of_addition or b is ')' or b is '$'):
-		# 	return '>'
-		# elif (a in operation_of_multiplication) and (b == '(' or b in constant):
-		# 	return '<'
-		# elif (a in operation_of_addition) and (b == '(' or b in constant or b in operation_of_multiplication):
-		# 	return '<'
-		# elif (a in operation_of_addition) and (b in operation_of_addition or b == ')' or b == '$'):
-		# 	return '>'
-		# elif (a == '(' or a == '$') and (b == '(' or b in constant or b in operation_of_multiplication or 
-		# 	b in operation_of_addition):
-		# 	return '<'
-		# elif a == '(' and b == ')':
-		# 	return '='
-		# elif a == '(' and b == '$':
-		# 	raise ParserSyntaxError('Right bracket is missed')
-		# elif a == '$' and b == ')':
-		# 	raise ParserSyntaxError('Right bracket is not balanced')
-		#elif a == '$' and b == '$':
-		#	raise ParserSyntaxError('Operand is missed')
+			if b in operation_of_relation:
+				raise ParserSyntaxError('Two comparisons in one expression are forbidden')
 
 
 	def analyze(self):
@@ -156,7 +114,7 @@ class Parser:
 					self.symbol_to_rpn(pop_stack)
 					if self.__get_precedence(self.stack[-1], pop_stack) == '<':
 						break
-			print(f'stack: {self.stack}\nsymbols: {self.symbols}')
+			#print(f'stack: {self.stack}\nsymbols: {self.symbols}')
 
 		print(f'rpn: {self.rpn}')
 
