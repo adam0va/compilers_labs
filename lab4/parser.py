@@ -12,7 +12,10 @@ class ParserSyntaxError(Exception):
 			return f'ParserSyntaxError was raised'
 
 class Parser:
-	def __init__(self, string_of_symbols: str):
+	def __init__(self):
+		pass
+
+	def read_test(self, string_of_symbols: str):
 		self.symbols = string_of_symbols.split()
 		self.symbols.append('$')
 		self.number_of_current_symbol = 0
@@ -114,7 +117,7 @@ class Parser:
 					self.symbol_to_rpn(pop_stack)
 					if self.__get_precedence(self.stack[-1], pop_stack) == '<':
 						break
-			#print(f'stack: {self.stack}\nsymbols: {self.symbols}')
+			print(f'stack: {self.stack}\nsymbols: {self.symbols}')
 
 		print(f'rpn: {self.rpn}')
 
